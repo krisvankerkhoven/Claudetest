@@ -27,3 +27,24 @@ homey:
 
 storage:
   path: "data/prices.json"
+
+# "Goedkoopste tankstation in de buurt" (tankprijzen/nearby_main.py) — apart van
+# de prijswijzigingen-tracker hierboven, draait via een eigen GitHub Actions
+# workflow (check-nearby.yml) en gebruikt een eigen Homey webhook-flow/apparaat.
+nearby:
+  fuel: euro95
+  # Gemeente/postcode als centrum van de zoekopdracht (benadering van je adres:
+  # Thiernessestraat 12, 1070 Brussel = Anderlecht). De afstand per station komt
+  # van carbu.com en is de afstand tot dit centrum, niet tot je exacte adres.
+  location_name: "Anderlecht"
+  postcode: "1070"
+  radius_km: 10
+  excluded_municipalities:
+    - "Ukkel"
+    - "Sint-Jans-Molenbeek"
+    - "Brussel"
+  # Volledige webhook-URL van een aparte Homey "Webhook ontvangen" flow-trigger
+  # voor dit doel. Lokaal testen: vul hier in. In GitHub Actions: laat leeg,
+  # gebruik het secret HOMEY_NEARBY_WEBHOOK_URL.
+  homey_webhook_url: ""
+  storage_path: "data/nearby.json"

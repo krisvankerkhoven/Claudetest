@@ -131,3 +131,56 @@ oppikt.
 Pas de `cron`-regel aan in `.github/workflows/check-prices.yml`. GitHub
 Actions ondersteunt geen interval korter dan enkele minuten, en de effectieve
 frequentie kan iets lager liggen bij drukte op GitHub's schedulers.
+
+## Goedkoopste tankstation in de buurt
+
+Naast de prijswijzigingen-tracker hierboven (voor specifieke, vooraf gekozen
+stations) is er een aparte, onafhankelijke module die dagelijks het
+**goedkoopste** E10-station binnen een straal van je adres opzoekt, met
+uitsluiting van bepaalde gemeenten.
+
+### Werking
+
+`tankprijzen/nearby.py` haalt via carbu.com's gebiedsoverzicht (niet één
+vaste stations-URL, maar een lijst van àlle stations rond een gemeente) alle
+stations op met hun prijs, gemeente en afstand tot het zoekcentrum
+(carbu.com berekent die afstand zelf, als attribuut per station — geen
+eigen geo-berekening nodig). `tankprijzen/nearby_main.py` filtert op straal
+en uitgesloten gemeenten, kiest de goedkoopste, en stuurt — enkel bij
+wijziging t.o.v. de vorige check — een Homey-melding.
+
+Het zoekcentrum is een gemeente/postcode (in `config.yaml` onder `nearby:`),
+geen exact adres: carbu.com kent enkel gemeente-niveau zoekopdrachten. Voor
+Thiernessestraat 12, 1070 Brussel is dat ingesteld als "Anderlecht"/"1070".
+De afstand per station is dus de afstand tot het centrum van die gemeente,
+niet tot je exacte huisnummer — voor een straal van 10km een ruim
+voldoende benadering.
+
+### Setup
+
+1. **Nieuwe, aparte Homey-flow**: net als bij de prijstracker een
+   "Webhook ontvangen"-trigger, met een eigen event-naam (bv.
+   `.../goedkoopste-buurt`), gevolgd door "Lees Tag als JSON en selecteer
+   pad..."-kaarten (zie hierboven) voor deze velden:
+
+   | Veld | Tag-type | Pad |
+   |---|---|---|
+   | `station` | Tekst-tag | `station` |
+   | `municipality` | Tekst-tag | `municipality` |
+   | `address` | Tekst-tag | `address` |
+   | `price` | Nummer-tag | `price` |
+   | `distance_km` | Nummer-tag | `distance_km` |
+   | `changed_at` | Tekst-tag | `changed_at` |
+
+2. Voeg de webhook-URL toe als GitHub secret **`HOMEY_NEARBY_WEBHOOK_URL`**
+   (zelfde manier als `HOMEY_WEBHOOK_URL` hierboven).
+3. Pas in `config.yaml` de `nearby:`-sectie aan: `location_name`,
+   `postcode`, `radius_km` en `excluded_municipalities`.
+4. `.github/workflows/check-nearby.yml` draait dit 1x per dag (06:00 UTC).
+   Pas de `cron`-regel aan voor een andere frequentie.
+
+### Lokaal testen
+
+```bash
+python -m tankprijzen.nearby_main --dry-run -v
+```
