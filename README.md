@@ -19,12 +19,13 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
 
 ### 1. Homey: webhook-flow aanmaken
 
-1. Installeer in Homey de officiële **Webhooks**-app (Athom), als die nog niet
-   actief is.
-2. Maak een nieuwe flow met als **trigger**: "Webhooks ontvangen" (When: a
-   webhook is triggered).
-3. Definieer de volgende tags in de trigger, zodat je ze verderop in de flow
-   (bv. in een pushbericht of een variabele-update) kan gebruiken:
+1. Maak in Homey een nieuwe flow met als **trigger**: "Webhook ontvangen".
+   De URL heeft de vorm `https://webhook.homey.app/<jouw-id>/<event-naam>`
+   (bv. `.../benzine`) — het laatste deel kies je zelf als naam voor deze
+   trigger.
+2. Definieer de volgende tags in de trigger, zodat je ze verderop in de flow
+   (bv. in een pushbericht of een variabele-update) kan gebruiken. Het
+   script stuurt ze mee als JSON-velden in de POST-body:
    - `station` (tekst)
    - `fuel` (tekst)
    - `price` (getal)
@@ -32,8 +33,6 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
    - `currency` (tekst)
    - `changed_at` (tekst — ISO 8601-tijdstip in UTC waarop de wijziging
      gedetecteerd werd, bv. `2026-09-26T14:32:00+00:00`)
-4. Homey genereert een webhook-ID. De volledige URL is:
-   `https://webhooks.athom.com/webhook/<jouw-id>/`
 
 ### 2. Repository configureren
 
