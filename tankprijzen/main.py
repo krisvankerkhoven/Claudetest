@@ -55,7 +55,12 @@ def run(config_path: str, dry_run: bool) -> int:
                 continue  # geen notificatie bij de allereerste meting
 
             log.info(
-                "%s %s: %.3f -> %.3f", change.station, change.fuel, change.old_price, change.new_price
+                "%s %s: %.3f -> %.3f (%s)",
+                change.station,
+                change.fuel,
+                change.old_price,
+                change.new_price,
+                change.changed_at,
             )
             if dry_run:
                 continue

@@ -13,9 +13,10 @@ log = logging.getLogger(__name__)
 def notify(webhook_url: str, change: PriceChange, timeout: float = 10.0) -> None:
     """POST de wijziging naar de Homey webhook-trigger.
 
-    De tags hieronder ("station", "fuel", "price", "previous_price", "currency")
-    moeten overeenkomen met de tags die je in de Homey-flow-trigger "Webhooks
-    ontvangen" hebt gedefinieerd.
+    De tags hieronder ("station", "fuel", "price", "previous_price", "currency",
+    "changed_at") moeten overeenkomen met de tags die je in de Homey-flow-trigger
+    "Webhooks ontvangen" hebt gedefinieerd. "changed_at" is het ISO 8601-tijdstip
+    (UTC) waarop deze prijswijziging gedetecteerd werd.
     """
     payload = {
         "station": change.station,
@@ -23,6 +24,7 @@ def notify(webhook_url: str, change: PriceChange, timeout: float = 10.0) -> None
         "price": change.new_price,
         "previous_price": change.old_price if change.old_price is not None else change.new_price,
         "currency": change.currency,
+        "changed_at": change.changed_at,
     }
 
     response = requests.post(webhook_url, json=payload, timeout=timeout)

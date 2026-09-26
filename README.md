@@ -30,6 +30,8 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
    - `price` (getal)
    - `previous_price` (getal)
    - `currency` (tekst)
+   - `changed_at` (tekst — ISO 8601-tijdstip in UTC waarop de wijziging
+     gedetecteerd werd, bv. `2026-09-26T14:32:00+00:00`)
 4. Homey genereert een webhook-ID. De volledige URL is:
    `https://webhooks.athom.com/webhook/<jouw-id>/`
 
@@ -84,6 +86,9 @@ stations:
   - name: "DATS24 Dilbeek"
     url: "https://dats24.be/nl/particulier/sdp/tankstation-dilbeek_118"
     fuels: []
+  - name: "Shell Express Anderlecht"
+    url: "https://carbu.com/belgie/index.php/station/shell-express/anderlecht/1070/2112"
+    fuels: [euro95]
   - name: "Een ander station"
     url: "https://..."
     fuels: [diesel, euro95]

@@ -9,6 +9,11 @@ stations:
     # Optioneel: beperk tot bepaalde brandstoffen. Leeg = alles wat gevonden wordt.
     fuels: []
 
+  - name: "Shell Express Anderlecht"
+    url: "https://carbu.com/belgie/index.php/station/shell-express/anderlecht/1070/2112"
+    # Enkel E10 (Euro95) opvolgen voor dit station.
+    fuels: [euro95]
+
   # Voeg hier extra tankstations toe:
   # - name: "Q8 Voorbeeld"
   #   url: "https://..."
