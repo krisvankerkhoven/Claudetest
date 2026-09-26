@@ -1,0 +1,24 @@
+# Kopieer dit bestand naar config.yaml en vul aan.
+# config.yaml zelf wordt niet gecommit (zie .gitignore) omdat het een webhook-URL
+# kan bevatten. Voor gebruik in GitHub Actions wordt de webhook-URL via het
+# secret HOMEY_WEBHOOK_URL aangeleverd (zie README.md) en niet uit dit bestand gelezen.
+
+stations:
+  - name: "DATS24 Dilbeek"
+    url: "https://dats24.be/nl/particulier/sdp/tankstation-dilbeek_118"
+    # Optioneel: beperk tot bepaalde brandstoffen. Leeg = alles wat gevonden wordt.
+    fuels: []
+
+  # Voeg hier extra tankstations toe:
+  # - name: "Q8 Voorbeeld"
+  #   url: "https://..."
+  #   fuels: [diesel, euro95]
+
+homey:
+  # Volledige webhook-URL van je Homey "Webhooks" flow-trigger, bv.:
+  # https://webhooks.athom.com/webhook/<webhook-id>/
+  # Lokaal testen: vul hier in. In GitHub Actions: laat leeg, gebruik het secret HOMEY_WEBHOOK_URL.
+  webhook_url: ""
+
+storage:
+  path: "data/prices.json"

@@ -1,0 +1,47 @@
+name: Tankstation prijzen check
+
+on:
+  schedule:
+    # Elke 30 minuten. Pas aan naar wens (let op GitHub's minimum van ~5 min).
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: check-prices
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright Chromium
+        run: playwright install --with-deps chromium
+
+      - name: Prepare config.yaml
+        run: cp config.example.yaml config.yaml
+
+      - name: Run price check
+        env:
+          HOMEY_WEBHOOK_URL: ${{ secrets.HOMEY_WEBHOOK_URL }}
+        run: python -m tankprijzen.main
+
+      - name: Commit bijgewerkte prijzen
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/prices.json
+          git diff --cached --quiet || git commit -m "Update tankstation prijzen"
+          git push
