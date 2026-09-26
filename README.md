@@ -114,7 +114,7 @@ Voeg gewoon een extra item toe onder `stations:` in `config.yaml`:
 stations:
   - name: "DATS24 Dilbeek"
     url: "https://dats24.be/nl/particulier/sdp/tankstation-dilbeek_118"
-    fuels: []
+    fuels: [euro95]
   - name: "Shell Express Anderlecht"
     url: "https://carbu.com/belgie/index.php/station/shell-express/anderlecht/1070/2112"
     fuels: [euro95]
