@@ -11,7 +11,9 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
 2. `tankprijzen/storage.py` vergelijkt met de vorige meting
    (`data/prices.json`) en bepaalt wat er gewijzigd is.
 3. Bij een wijziging stuurt `tankprijzen/homey.py` een POST-request naar je
-   Homey webhook-URL.
+   Homey webhook-URL, met de volledige payload als JSON-tekst in de
+   query-parameter `tag` (zie stap 1 hieronder — dat is hoe Homey's
+   webhook-trigger data verwacht).
 4. `.github/workflows/check-prices.yml` draait dit script elke 30 minuten via
    GitHub Actions — er is geen eigen server nodig.
 
@@ -19,20 +21,48 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
 
 ### 1. Homey: webhook-flow aanmaken
 
-1. Maak in Homey een nieuwe flow met als **trigger**: "Webhook ontvangen".
-   De URL heeft de vorm `https://webhook.homey.app/<jouw-id>/<event-naam>`
-   (bv. `.../benzine`) — het laatste deel kies je zelf als naam voor deze
-   trigger.
-2. Definieer de volgende tags in de trigger, zodat je ze verderop in de flow
-   (bv. in een pushbericht of een variabele-update) kan gebruiken. Het
-   script stuurt ze mee als JSON-velden in de POST-body:
-   - `station` (tekst)
-   - `fuel` (tekst)
-   - `price` (getal)
-   - `previous_price` (getal)
-   - `currency` (tekst)
-   - `changed_at` (tekst — ISO 8601-tijdstip in UTC waarop de wijziging
-     gedetecteerd werd, bv. `2026-09-26T14:32:00+00:00`)
+Homey's ingebouwde **"Webhook ontvangen"**-trigger (onderdeel van de
+Logic-app) werkt anders dan je zou verwachten: hij geeft niet automatisch
+meerdere tags door. Hij geeft de flow precies **één ruwe tekst-tag**,
+gevuld vanuit een query-parameter die letterlijk `tag` heet (dus
+`...?tag=<waarde>` — niet een JSON-body, en niet losse
+`station=...&price=...`-parameters). Om daar de 6 afzonderlijke velden uit
+te halen, splits je die ene tag verderop in de flow.
+
+1. Maak een nieuwe flow met als **trigger**: "Webhook ontvangen". De URL
+   heeft de vorm `https://webhook.homey.app/<jouw-homey-id>/<event-naam>`
+   (bv. `.../benzine`) — het laatste stukje kies je zelf als naam voor
+   deze trigger. `tankprijzen/homey.py` stuurt hier automatisch de
+   volledige payload naartoe als JSON-tekst in de `tag`-parameter; je
+   hoeft dus niets aan de URL zelf te wijzigen.
+2. Installeer de community-app **Better Logic** (nodig voor de
+   JSON-parsing-kaarten hieronder) via de Homey App Store.
+3. Voeg in het "Dan..."-gedeelte van de flow 6 keer de kaart **"Lees Tag
+   als JSON en selecteer pad ... als Tekst-tag / Nummer-tag"** toe (onder
+   Logic/Better Logic). Elke kaart neemt de ruwe `Tag` van de trigger als
+   invoer, en het **Pad**-veld is telkens gewoon de veldnaam (geen `.` of
+   `$` nodig, het zijn platte top-level JSON-velden):
+
+   | Veld | Tag-type | Pad |
+   |---|---|---|
+   | `station` | Tekst-tag | `station` |
+   | `fuel` | Tekst-tag | `fuel` |
+   | `price` | Nummer-tag | `price` |
+   | `previous_price` | Nummer-tag | `previous_price` |
+   | `currency` | Tekst-tag | `currency` |
+   | `changed_at` | Tekst-tag | `changed_at` |
+
+4. Gebruik de zo verkregen tags (elke kaart geeft een eigen `Resultaat`-tag)
+   verderop in de flow, bv. om een apparaat bij te werken of een
+   pushbericht te sturen: `{{station}}: {{fuel}} nu €{{price}}`.
+5. **Sla de flow op en zet ze aan.** Test niet enkel via de "Test"-knop op
+   de trigger-kaart (die laat je een waarde manueel intypen en test dus
+   niet of een echte binnenkomende call de flow bereikt) — stuur ook
+   minstens één keer een echte call, bv.:
+   ```bash
+   curl -G "https://webhook.homey.app/<jouw-homey-id>/<event-naam>" \
+     --data-urlencode 'tag={"station":"Test","fuel":"euro95","price":1.75,"previous_price":1.73,"currency":"EUR","changed_at":"2026-01-01T10:00:00+00:00"}'
+   ```
 
 ### 2. Repository configureren
 
