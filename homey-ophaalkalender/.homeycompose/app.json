@@ -1,0 +1,30 @@
+{
+  "id": "be.kris.ophaalkalender",
+  "version": "1.0.0",
+  "compatibility": ">=12.2.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Brussels Waste Calendar",
+    "nl": "Brusselse Ophaalkalender"
+  },
+  "description": {
+    "en": "Next collection date for the white, yellow, blue, green and orange bags at any address in the Brussels Region.",
+    "nl": "Volgende ophaaldatum van de witte, gele, blauwe, groene en oranje zak voor elk adres in het Brussels Gewest."
+  },
+  "category": [
+    "tools"
+  ],
+  "permissions": [],
+  "brandColor": "#2E7D32",
+  "author": {
+    "name": "Kris Van Kerkhoven"
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "title": {
+    "en": "Refresh calendar",
+    "nl": "Kalender vernieuwen"
+  },
+  "titleFormatted": {
+    "en": "Refresh the waste calendar",
+    "nl": "Vernieuw de ophaalkalender"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=address"
+    }
+  ]
+}

@@ -1,0 +1,536 @@
+{
+  "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
+  "id": "be.kris.ophaalkalender",
+  "version": "1.0.0",
+  "compatibility": ">=12.2.0",
+  "sdk": 3,
+  "platforms": [
+    "local"
+  ],
+  "name": {
+    "en": "Brussels Waste Calendar",
+    "nl": "Brusselse Ophaalkalender"
+  },
+  "description": {
+    "en": "Next collection date for the white, yellow, blue, green and orange bags at any address in the Brussels Region.",
+    "nl": "Volgende ophaaldatum van de witte, gele, blauwe, groene en oranje zak voor elk adres in het Brussels Gewest."
+  },
+  "category": [
+    "tools"
+  ],
+  "permissions": [],
+  "brandColor": "#2E7D32",
+  "author": {
+    "name": "Kris Van Kerkhoven"
+  },
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png",
+    "xlarge": "/assets/images/xlarge.png"
+  },
+  "flow": {
+    "triggers": [
+      {
+        "title": {
+          "en": "Time to put a bag out",
+          "nl": "Het is tijd om een zak buiten te zetten"
+        },
+        "titleFormatted": {
+          "en": "Time to put out [[color]] ([[when]])",
+          "nl": "Het is tijd om [[color]] buiten te zetten ([[when]])"
+        },
+        "hint": {
+          "en": "Fires at the reminder time set on the device.",
+          "nl": "Gaat af op het meldingstijdstip dat je op het apparaat instelt."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=address"
+          },
+          {
+            "type": "dropdown",
+            "name": "color",
+            "title": {
+              "en": "Bag",
+              "nl": "Zak"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "Any bag",
+                  "nl": "Elke zak"
+                }
+              },
+              {
+                "id": "white",
+                "label": {
+                  "en": "White bag",
+                  "nl": "Witte zak"
+                }
+              },
+              {
+                "id": "yellow",
+                "label": {
+                  "en": "Yellow bag",
+                  "nl": "Gele zak"
+                }
+              },
+              {
+                "id": "blue",
+                "label": {
+                  "en": "Blue bag",
+                  "nl": "Blauwe zak"
+                }
+              },
+              {
+                "id": "green",
+                "label": {
+                  "en": "Green bag",
+                  "nl": "Groene zak"
+                }
+              },
+              {
+                "id": "orange",
+                "label": {
+                  "en": "Orange bag",
+                  "nl": "Oranje zak"
+                }
+              }
+            ]
+          },
+          {
+            "type": "dropdown",
+            "name": "when",
+            "title": {
+              "en": "When",
+              "nl": "Wanneer"
+            },
+            "values": [
+              {
+                "id": "today",
+                "label": {
+                  "en": "Today",
+                  "nl": "Vandaag"
+                }
+              },
+              {
+                "id": "tomorrow",
+                "label": {
+                  "en": "Tomorrow",
+                  "nl": "Morgen"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "bags",
+            "type": "string",
+            "title": {
+              "en": "Bags",
+              "nl": "Zakken"
+            },
+            "example": "witte en blauwe zak"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "en": "Message",
+              "nl": "Bericht"
+            },
+            "example": "Vandaag buitenzetten: witte en blauwe zak (18:00–24:00)"
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "title": {
+              "en": "Date",
+              "nl": "Datum"
+            },
+            "example": "2026-09-28"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "title": {
+              "en": "From",
+              "nl": "Vanaf"
+            },
+            "example": "18:00"
+          },
+          {
+            "name": "to",
+            "type": "string",
+            "title": {
+              "en": "Until",
+              "nl": "Tot"
+            },
+            "example": "24:00"
+          }
+        ],
+        "id": "pickup_reminder"
+      }
+    ],
+    "conditions": [
+      {
+        "title": {
+          "en": "Bag is put out",
+          "nl": "Zak moet buiten"
+        },
+        "titleFormatted": {
+          "en": "[[color]] is put out [[when]]",
+          "nl": "[[color]] moet buiten [[when]]"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=address"
+          },
+          {
+            "type": "dropdown",
+            "name": "color",
+            "title": {
+              "en": "Bag",
+              "nl": "Zak"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "Any bag",
+                  "nl": "Elke zak"
+                }
+              },
+              {
+                "id": "white",
+                "label": {
+                  "en": "White bag",
+                  "nl": "Witte zak"
+                }
+              },
+              {
+                "id": "yellow",
+                "label": {
+                  "en": "Yellow bag",
+                  "nl": "Gele zak"
+                }
+              },
+              {
+                "id": "blue",
+                "label": {
+                  "en": "Blue bag",
+                  "nl": "Blauwe zak"
+                }
+              },
+              {
+                "id": "green",
+                "label": {
+                  "en": "Green bag",
+                  "nl": "Groene zak"
+                }
+              },
+              {
+                "id": "orange",
+                "label": {
+                  "en": "Orange bag",
+                  "nl": "Oranje zak"
+                }
+              }
+            ]
+          },
+          {
+            "type": "dropdown",
+            "name": "when",
+            "title": {
+              "en": "When",
+              "nl": "Wanneer"
+            },
+            "values": [
+              {
+                "id": "today",
+                "label": {
+                  "en": "Today",
+                  "nl": "Vandaag"
+                }
+              },
+              {
+                "id": "tomorrow",
+                "label": {
+                  "en": "Tomorrow",
+                  "nl": "Morgen"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "pickup_on"
+      }
+    ],
+    "actions": [
+      {
+        "title": {
+          "en": "Refresh calendar",
+          "nl": "Kalender vernieuwen"
+        },
+        "titleFormatted": {
+          "en": "Refresh the waste calendar",
+          "nl": "Vernieuw de ophaalkalender"
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=address"
+          }
+        ],
+        "id": "refresh"
+      }
+    ]
+  },
+  "drivers": [
+    {
+      "name": {
+        "en": "Address",
+        "nl": "Adres"
+      },
+      "class": "other",
+      "capabilities": [
+        "pickup_next",
+        "pickup_white",
+        "pickup_yellow",
+        "pickup_blue",
+        "pickup_green",
+        "pickup_orange"
+      ],
+      "platforms": [
+        "local"
+      ],
+      "connectivity": [
+        "cloud"
+      ],
+      "images": {
+        "small": "/drivers/address/assets/images/small.png",
+        "large": "/drivers/address/assets/images/large.png",
+        "xlarge": "/drivers/address/assets/images/xlarge.png"
+      },
+      "pair": [
+        {
+          "id": "address",
+          "navigation": {
+            "next": "list_devices"
+          }
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "settings": [
+        {
+          "type": "group",
+          "label": {
+            "en": "Notifications",
+            "nl": "Notificaties"
+          },
+          "children": [
+            {
+              "id": "notify_same_day",
+              "type": "checkbox",
+              "label": {
+                "en": "Notify on the day itself",
+                "nl": "Melding op de dag zelf"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_same_day_time",
+              "type": "text",
+              "label": {
+                "en": "Time (HH:MM)",
+                "nl": "Tijdstip (UU:MM)"
+              },
+              "value": "17:00",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+            },
+            {
+              "id": "notify_evening_before",
+              "type": "checkbox",
+              "label": {
+                "en": "Notify the evening before",
+                "nl": "Melding de avond ervoor"
+              },
+              "value": false
+            },
+            {
+              "id": "notify_evening_before_time",
+              "type": "text",
+              "label": {
+                "en": "Time (HH:MM)",
+                "nl": "Tijdstip (UU:MM)"
+              },
+              "value": "20:00",
+              "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$"
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Which bags",
+            "nl": "Welke zakken"
+          },
+          "children": [
+            {
+              "id": "notify_white",
+              "type": "checkbox",
+              "label": {
+                "en": "White bag",
+                "nl": "Witte zak"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_yellow",
+              "type": "checkbox",
+              "label": {
+                "en": "Yellow bag",
+                "nl": "Gele zak"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_blue",
+              "type": "checkbox",
+              "label": {
+                "en": "Blue bag",
+                "nl": "Blauwe zak"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_green",
+              "type": "checkbox",
+              "label": {
+                "en": "Green bag",
+                "nl": "Groene zak"
+              },
+              "value": true
+            },
+            {
+              "id": "notify_orange",
+              "type": "checkbox",
+              "label": {
+                "en": "Orange bag",
+                "nl": "Oranje zak"
+              },
+              "value": true
+            }
+          ]
+        },
+        {
+          "type": "group",
+          "label": {
+            "en": "Calendar",
+            "nl": "Kalender"
+          },
+          "children": [
+            {
+              "id": "address",
+              "type": "label",
+              "label": {
+                "en": "Address",
+                "nl": "Adres"
+              },
+              "value": "-"
+            },
+            {
+              "id": "last_update",
+              "type": "label",
+              "label": {
+                "en": "Last updated",
+                "nl": "Laatst bijgewerkt"
+              },
+              "value": "-"
+            }
+          ]
+        }
+      ],
+      "id": "address"
+    }
+  ],
+  "capabilities": {
+    "pickup_blue": {
+      "type": "string",
+      "title": {
+        "en": "Blue bag",
+        "nl": "Blauwe zak"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    },
+    "pickup_green": {
+      "type": "string",
+      "title": {
+        "en": "Green bag",
+        "nl": "Groene zak"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    },
+    "pickup_next": {
+      "type": "string",
+      "title": {
+        "en": "Next collection",
+        "nl": "Volgende ophaling"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    },
+    "pickup_orange": {
+      "type": "string",
+      "title": {
+        "en": "Orange bag",
+        "nl": "Oranje zak"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    },
+    "pickup_white": {
+      "type": "string",
+      "title": {
+        "en": "White bag",
+        "nl": "Witte zak"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    },
+    "pickup_yellow": {
+      "type": "string",
+      "title": {
+        "en": "Yellow bag",
+        "nl": "Gele zak"
+      },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor"
+    }
+  }
+}

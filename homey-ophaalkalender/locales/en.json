@@ -1,0 +1,11 @@
+{
+  "pair": {
+    "title": "Find your address",
+    "street": "Street (at least 3 letters)",
+    "number": "House number",
+    "next": "Next",
+    "noResults": "No streets found in the Brussels Region",
+    "loadingNumbers": "Loading house numbers…",
+    "checking": "Checking address and calendar…"
+  }
+}

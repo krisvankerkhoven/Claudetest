@@ -1,0 +1,10 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Orange bag",
+    "nl": "Oranje zak"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor"
+}

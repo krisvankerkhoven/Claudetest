@@ -1,0 +1,144 @@
+{
+  "title": {
+    "en": "Time to put a bag out",
+    "nl": "Het is tijd om een zak buiten te zetten"
+  },
+  "titleFormatted": {
+    "en": "Time to put out [[color]] ([[when]])",
+    "nl": "Het is tijd om [[color]] buiten te zetten ([[when]])"
+  },
+  "hint": {
+    "en": "Fires at the reminder time set on the device.",
+    "nl": "Gaat af op het meldingstijdstip dat je op het apparaat instelt."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=address"
+    },
+    {
+      "type": "dropdown",
+      "name": "color",
+      "title": {
+        "en": "Bag",
+        "nl": "Zak"
+      },
+      "values": [
+        {
+          "id": "any",
+          "label": {
+            "en": "Any bag",
+            "nl": "Elke zak"
+          }
+        },
+        {
+          "id": "white",
+          "label": {
+            "en": "White bag",
+            "nl": "Witte zak"
+          }
+        },
+        {
+          "id": "yellow",
+          "label": {
+            "en": "Yellow bag",
+            "nl": "Gele zak"
+          }
+        },
+        {
+          "id": "blue",
+          "label": {
+            "en": "Blue bag",
+            "nl": "Blauwe zak"
+          }
+        },
+        {
+          "id": "green",
+          "label": {
+            "en": "Green bag",
+            "nl": "Groene zak"
+          }
+        },
+        {
+          "id": "orange",
+          "label": {
+            "en": "Orange bag",
+            "nl": "Oranje zak"
+          }
+        }
+      ]
+    },
+    {
+      "type": "dropdown",
+      "name": "when",
+      "title": {
+        "en": "When",
+        "nl": "Wanneer"
+      },
+      "values": [
+        {
+          "id": "today",
+          "label": {
+            "en": "Today",
+            "nl": "Vandaag"
+          }
+        },
+        {
+          "id": "tomorrow",
+          "label": {
+            "en": "Tomorrow",
+            "nl": "Morgen"
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "bags",
+      "type": "string",
+      "title": {
+        "en": "Bags",
+        "nl": "Zakken"
+      },
+      "example": "witte en blauwe zak"
+    },
+    {
+      "name": "text",
+      "type": "string",
+      "title": {
+        "en": "Message",
+        "nl": "Bericht"
+      },
+      "example": "Vandaag buitenzetten: witte en blauwe zak (18:00–24:00)"
+    },
+    {
+      "name": "date",
+      "type": "string",
+      "title": {
+        "en": "Date",
+        "nl": "Datum"
+      },
+      "example": "2026-09-28"
+    },
+    {
+      "name": "from",
+      "type": "string",
+      "title": {
+        "en": "From",
+        "nl": "Vanaf"
+      },
+      "example": "18:00"
+    },
+    {
+      "name": "to",
+      "type": "string",
+      "title": {
+        "en": "Until",
+        "nl": "Tot"
+      },
+      "example": "24:00"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "title": {
+    "en": "Bag is put out",
+    "nl": "Zak moet buiten"
+  },
+  "titleFormatted": {
+    "en": "[[color]] is put out [[when]]",
+    "nl": "[[color]] moet buiten [[when]]"
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=address"
+    },
+    {
+      "type": "dropdown",
+      "name": "color",
+      "title": {
+        "en": "Bag",
+        "nl": "Zak"
+      },
+      "values": [
+        {
+          "id": "any",
+          "label": {
+            "en": "Any bag",
+            "nl": "Elke zak"
+          }
+        },
+        {
+          "id": "white",
+          "label": {
+            "en": "White bag",
+            "nl": "Witte zak"
+          }
+        },
+        {
+          "id": "yellow",
+          "label": {
+            "en": "Yellow bag",
+            "nl": "Gele zak"
+          }
+        },
+        {
+          "id": "blue",
+          "label": {
+            "en": "Blue bag",
+            "nl": "Blauwe zak"
+          }
+        },
+        {
+          "id": "green",
+          "label": {
+            "en": "Green bag",
+            "nl": "Groene zak"
+          }
+        },
+        {
+          "id": "orange",
+          "label": {
+            "en": "Orange bag",
+            "nl": "Oranje zak"
+          }
+        }
+      ]
+    },
+    {
+      "type": "dropdown",
+      "name": "when",
+      "title": {
+        "en": "When",
+        "nl": "Wanneer"
+      },
+      "values": [
+        {
+          "id": "today",
+          "label": {
+            "en": "Today",
+            "nl": "Vandaag"
+          }
+        },
+        {
+          "id": "tomorrow",
+          "label": {
+            "en": "Tomorrow",
+            "nl": "Morgen"
+          }
+        }
+      ]
+    }
+  ]
+}

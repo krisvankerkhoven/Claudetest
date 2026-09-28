@@ -1,0 +1,10 @@
+{
+  "type": "string",
+  "title": {
+    "en": "Next collection",
+    "nl": "Volgende ophaling"
+  },
+  "getable": true,
+  "setable": false,
+  "uiComponent": "sensor"
+}

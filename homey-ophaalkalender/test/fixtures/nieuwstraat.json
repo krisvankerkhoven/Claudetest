@@ -1,0 +1,41 @@
+{
+ "rue": "Nieuwstraat, 10 - 1000 Brussel",
+ "img_ramassage": "",
+ "desc_ramassage": {
+  "lundi": "Maandag, Zet je zakken BLAUW,WIT buiten tussen 18:00 en 24:00",
+  "mardi": "",
+  "mercredi": "",
+  "jeudi": "Donderdag, Zet je zakken WIT,GEEL,GROEN,VOEDINGSAFVAL,VOEDINGSAFVAL buiten tussen 18:00 en 24:00",
+  "vendredi": "",
+  "samedi": "",
+  "dimanche": "",
+  "message": "Ter herinnering: afvalsortering is sinds 2010 verplicht en op niet-naleving staat een boete.Zijn afval/grofvuil achterlaten op de openbare weg is een sluikstort, waarvoor een boete van 50 € tot 62.500 € kan worden opgelegd.Samen houden we de straten netjes. Hoe meer jullie sorteren, hoe beter wij recycleren."
+ },
+ "Proxys": "<ul><li>23, Nieuwe Graanmarkt - 1000 Brussel<br/>Even maanden - 3de zaterdag - 14.00 tot 14.45 uur</li><li>1, Congresplein - 1000 Brussel<br/>Oneven maanden - 3de zaterdag - 15.00 tot 15.45 uur</li><li>13, Rouppeplein - 1000 Brussel<br/>Even maanden - 3de zaterdag  - 15.00 tot 15.45 uur</li></ul>",
+ "SacsVerts": [
+  "2026-10-07",
+  "2026-10-21",
+  "2026-11-04",
+  "2026-11-18",
+  "2026-12-02",
+  "2026-12-16",
+  "2026-12-30",
+  "2027-01-13",
+  "2027-01-27",
+  "2027-02-10",
+  "2027-02-24",
+  "2027-03-10",
+  "2027-03-24",
+  "2027-04-07",
+  "2027-04-21",
+  "2027-05-05",
+  "2027-05-19",
+  "2027-06-02",
+  "2027-06-16",
+  "2027-06-30",
+  "2027-07-14",
+  "2027-07-28",
+  "2027-08-11",
+  "2027-08-25"
+ ]
+}

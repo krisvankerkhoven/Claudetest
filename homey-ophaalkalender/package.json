@@ -1,0 +1,14 @@
+{
+  "name": "be.kris.ophaalkalender",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Homey-app: ophaalkalender voor de gekleurde zakken in het Brussels Gewest (ARP-GAN / Net Brussel)",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "live": "node scripts/live-check.js",
+    "validate": "homey app validate"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

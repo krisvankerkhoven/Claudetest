@@ -1,0 +1,41 @@
+{
+ "rue": "Steenweg op Gent, 100 - 1080 Sint-Jans-Molenbeek",
+ "img_ramassage": "",
+ "desc_ramassage": {
+  "lundi": "Maandag, Zet je zakken BLAUW,WIT buiten tussen 18:00 en 20:00. Je zakken worden opgehaald vanaf 20:00",
+  "mardi": "",
+  "mercredi": "",
+  "jeudi": "Donderdag, Zet je zakken GEEL,WIT,VOEDINGSAFVAL,GROEN buiten tussen 18:00 en 20:00. Je zakken worden opgehaald vanaf 20:00",
+  "vendredi": "",
+  "samedi": "",
+  "dimanche": "",
+  "message": "Ter herinnering: afvalsortering is sinds 2010 verplicht en op niet-naleving staat een boete.Zijn afval/grofvuil achterlaten op de openbare weg is een sluikstort, waarvoor een boete van 50 € tot 62.500 € kan worden opgelegd.Samen houden we de straten netjes. Hoe meer jullie sorteren, hoe beter wij recycleren."
+ },
+ "Proxys": "<ul><li>23, Nieuwe Graanmarkt - 1000 Brussel<br/>Even maanden - 3de zaterdag - 14.00 tot 14.45 uur</li><li>1, Sippelberglaan - 1080 Sint-Jans-Molenbeek<br/>Oneven maanden - 3de maandag - 18.00 tot 18.45 uur</li><li>42B, Jubelfeestlaan - 1080 Sint-Jans-Molenbeek<br/>even maanden 2de zaterdag - 14.00 tot 14.45 uur</li></ul>",
+ "SacsVerts": [
+  "2026-10-01",
+  "2026-10-15",
+  "2026-10-29",
+  "2026-11-12",
+  "2026-11-26",
+  "2026-12-10",
+  "2026-12-24",
+  "2027-01-07",
+  "2027-01-21",
+  "2027-02-04",
+  "2027-02-18",
+  "2027-03-04",
+  "2027-03-18",
+  "2027-04-01",
+  "2027-04-15",
+  "2027-04-29",
+  "2027-05-13",
+  "2027-05-27",
+  "2027-06-10",
+  "2027-06-24",
+  "2027-07-08",
+  "2027-07-22",
+  "2027-08-05",
+  "2027-08-19"
+ ]
+}

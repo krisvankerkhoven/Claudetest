@@ -1,0 +1,42 @@
+{
+ "rue": "Thiernessestraat, 12 - 1070 Anderlecht",
+ "img_ramassage": "",
+ "desc_ramassage": {
+  "lundi": "Maandag, Zet je zakken WIT,BLAUW buiten tussen 18:00 en 24:00",
+  "mardi": "",
+  "mercredi": "",
+  "jeudi": "Donderdag, Zet je zakken GEEL,WIT buiten tussen 18:00 en 24:00",
+  "vendredi": "",
+  "samedi": "",
+  "dimanche": "",
+  "message": "Ter herinnering: afvalsortering is sinds 2010 verplicht en op niet-naleving staat een boete.Zijn afval/grofvuil achterlaten op de openbare weg is een sluikstort, waarvoor een boete van 50 € tot 62.500 € kan worden opgelegd.Samen houden we de straten netjes. Hoe meer jullie sorteren, hoe beter wij recycleren."
+ },
+ "Proxys": "<ul><li>31, Prins van Luiklaan - 1070 Anderlecht</li><li>7, Commandant Vander Meerenlaan - 1070 Anderlecht<br/>Elke 3de maandag - 17.00 tot 17.45 uur</li><li>15, Dapperheidsplein - 1070 Anderlecht</li></ul>",
+ "SacsVerts": [
+  "2026-09-28",
+  "2026-10-12",
+  "2026-10-26",
+  "2026-11-09",
+  "2026-11-23",
+  "2026-12-07",
+  "2026-12-21",
+  "2027-01-04",
+  "2027-01-18",
+  "2027-02-01",
+  "2027-02-15",
+  "2027-03-01",
+  "2027-03-15",
+  "2027-03-29",
+  "2027-04-12",
+  "2027-04-26",
+  "2027-05-10",
+  "2027-05-24",
+  "2027-06-07",
+  "2027-06-21",
+  "2027-07-05",
+  "2027-07-19",
+  "2027-08-02",
+  "2027-08-16",
+  "2027-08-30"
+ ]
+}

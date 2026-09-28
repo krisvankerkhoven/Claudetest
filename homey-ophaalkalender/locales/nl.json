@@ -1,0 +1,11 @@
+{
+  "pair": {
+    "title": "Zoek je adres",
+    "street": "Straat (minstens 3 letters)",
+    "number": "Huisnummer",
+    "next": "Volgende",
+    "noResults": "Geen straten gevonden in het Brussels Gewest",
+    "loadingNumbers": "Huisnummers laden…",
+    "checking": "Adres en kalender controleren…"
+  }
+}

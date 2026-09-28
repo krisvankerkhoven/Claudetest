@@ -1,0 +1,91 @@
+<style>
+  .field { margin-bottom: 14px; }
+  label { display: block; font-weight: 600; margin-bottom: 4px; }
+  input, select { width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; }
+  ul#results { list-style: none; margin: 4px 0 0; padding: 0; max-height: 210px; overflow-y: auto; }
+  ul#results li { padding: 10px; border-bottom: 1px solid #ddd; cursor: pointer; }
+  ul#results li:active { background: #e8f5e9; }
+  #status { min-height: 1.4em; color: #666; margin: 6px 0; }
+  #status.error { color: #c62828; }
+</style>
+
+<div class="field">
+  <label for="street" data-i18n="pair.street"></label>
+  <input id="street" type="text" autocomplete="off" />
+  <ul id="results"></ul>
+</div>
+<div class="field">
+  <label for="number" data-i18n="pair.number"></label>
+  <select id="number" disabled></select>
+</div>
+<div id="status"></div>
+<button id="next" class="hy-button-primary" disabled data-i18n="pair.next"></button>
+
+<script>
+  var chosen = null;
+  var timer = null;
+  var streetEl = document.getElementById('street');
+  var resultsEl = document.getElementById('results');
+  var numberEl = document.getElementById('number');
+  var nextEl = document.getElementById('next');
+  var statusEl = document.getElementById('status');
+
+  function status(msg, isError) {
+    statusEl.textContent = msg || '';
+    statusEl.className = isError ? 'error' : '';
+  }
+
+  streetEl.addEventListener('input', function () {
+    chosen = null;
+    numberEl.innerHTML = '';
+    numberEl.disabled = true;
+    nextEl.disabled = true;
+    clearTimeout(timer);
+    var term = streetEl.value.trim();
+    if (term.length < 3) { resultsEl.innerHTML = ''; status(''); return; }
+    timer = setTimeout(function () {
+      Homey.emit('search', term, function (err, list) {
+        resultsEl.innerHTML = '';
+        if (err) { status(err.message || err, true); return; }
+        status(list.length ? '' : Homey.__('pair.noResults'));
+        list.forEach(function (s) {
+          var li = document.createElement('li');
+          li.textContent = s.street + ' – ' + s.zip + ' ' + s.city;
+          li.addEventListener('click', function () { pick(s); });
+          resultsEl.appendChild(li);
+        });
+      });
+    }, 350);
+  });
+
+  function pick(s) {
+    chosen = s;
+    streetEl.value = s.street + ' – ' + s.zip + ' ' + s.city;
+    resultsEl.innerHTML = '';
+    status(Homey.__('pair.loadingNumbers'));
+    Homey.emit('numbers', { street: s.street, zip: s.zip }, function (err, numbers) {
+      if (err) { status(err.message || err, true); return; }
+      status('');
+      numberEl.innerHTML = '';
+      numbers.forEach(function (n) {
+        var o = document.createElement('option');
+        o.value = n; o.textContent = n;
+        numberEl.appendChild(o);
+      });
+      numberEl.disabled = false;
+      nextEl.disabled = numbers.length === 0;
+    });
+  }
+
+  nextEl.addEventListener('click', function () {
+    if (!chosen) return;
+    nextEl.disabled = true;
+    status(Homey.__('pair.checking'));
+    Homey.emit('select', { street: chosen.street, zip: chosen.zip, city: chosen.city, number: numberEl.value }, function (err) {
+      if (err) { nextEl.disabled = false; status(err.message || err, true); return; }
+      Homey.showView('list_devices');
+    });
+  });
+
+  Homey.setTitle(Homey.__('pair.title'));
+</script>
