@@ -8,33 +8,38 @@ Bron: dezelfde publieke aanroepen als het formulier op
 ## Wat je krijgt
 
 - **Elk adres = één apparaat.** Voeg zoveel adressen toe als je wil (thuis, ouders, tweede verblijf). Zoeken op straatnaam (min. 3 letters), dan huisnummer.
-- **Per apparaat** zes tegels: volgende ophaling per kleur (`ma 5 okt (over 7 d)`, `Vandaag`, `Morgen`, of `Geen ophaling`) en een samenvatting `Volgende ophaling`.
+- **Per apparaat** zes tegels met een zakpictogram: per kleur de volgende keer dat de zak **buiten moet, met het uur** (`Vandaag 18:00–24:00`, `Morgen 05:00–12:00`, `wo 30 sep 18:00–24:00`, of `Geen ophaling`), plus een samenvatting `Volgende ophaling`. Is het venster van vandaag al voorbij, dan springt de tegel door naar de volgende keer.
 - **Vernieuwt zich zelf** elke 12 uur en bij het opstarten. De laatste kalender wordt bewaard: als ARP-GAN of het internet even weg is, blijft alles werken. Na 3 dagen zonder succes toont het apparaat een waarschuwing.
-- **Notificaties** (instelbaar per apparaat): op de dag zelf (standaard 17:00) en/of de avond ervoor (standaard 20:00), en per kleur aan of uit. De tekst bevat het tijdvenster, bv. *Vandaag buitenzetten: witte, blauwe en groene zakken (18:00–24:00)*.
+- **Notificaties** (instelbaar per apparaat, per zak aan of uit):
+  - zodra buitenzetten mag, dus bij het begin van het uur-venster (standaard aan), bv. *Buitenzetten kan nu: witte en gele zakken (18:00–24:00)*;
+  - optioneel op een vast tijdstip op de dag zelf (niet bij ochtendvensters die dan al voorbij zijn);
+  - optioneel de avond ervoor (standaard 20:00).
 
 ### Flow-kaarten
 
 | Type | Kaart |
 |---|---|
-| Trigger | **Het is tijd om een zak buiten te zetten** – kies zak (of elke zak) en vandaag/morgen. Tokens: `bags`, `text`, `date`, `from`, `to` |
-| Voorwaarde | **Zak moet buiten** – zak + vandaag/morgen |
+| Trigger | **Buitenzetten van zakken mag nu** – gaat af bij het begin van het venster (bv. 18:00). Kies een zak of elke zak. Tokens: `bags`, `text`, `date`, `from` (begin-uur), `to` (eind-uur) |
+| Trigger | **Het is tijd om een zak buiten te zetten** – op het tijdstip uit de instellingen, vandaag of morgen |
+| Voorwaarde | **Buitenzetten mag nu** – waar vandaag tussen begin- en einduur |
+| Voorwaarde | **Zak staat op de buitenzetkalender** – vandaag of morgen |
 | Actie | **Kalender vernieuwen** |
 
-Met de trigger en het token `text` stuur je dezelfde melding naar een speaker (TTS), WhatsApp of een dashboard.
+Voorbeeld: *Als* "Buitenzetten van de witte zak mag nu" → *dan* stuur een pushbericht met `{{text}}` of laat een speaker `{{bags}}` uitspreken.
 
 ## Hoe de data wordt gelezen
 
-| Kleur | Bron in het antwoord van ARP-GAN |
-|---|---|
-| Wit, geel, blauw | Wekelijks schema per weekdag (`desc_ramassage`) |
-| Groen | Exacte datums om de 2 weken (`SacsVerts`) |
-| Oranje | `VOEDINGSAFVAL` in de weekdagtekst, enkel in wijken met voedingsafvalophaling |
+Het antwoord van ARP-GAN bevat drie bronnen, en die zijn niet even volledig:
 
-De datums zijn de datums waarop je de zakken **buiten zet** (de kalender heet "buitenzetten van de zakken"). Het tijdvenster komt uit dezelfde tekst.
+| Bron | Inhoud | Gebruik |
+|---|---|---|
+| **Kalenderafbeelding** (`img_ramassage`) | Per weekdag de zakken (ook **oranje**) en het **uur** om buiten te zetten. Dit is de officiële buitenzetkalender. | Hoofdbron |
+| `SacsVerts` | Exacte datums van de **groene** zak (om de 2 weken) | Groen |
+| Tekst (`desc_ramassage`) | Ophaaldag per weekdag; mist zakken en ochtenduren en kan een dag afwijken van het buitenzetten | Enkel als noodoplossing |
 
-**Let op:** de kalender vermeldt geen feestdagverschuivingen. Rond feestdagen kan de ophaaldag afwijken; controleer dan de website van Net Brussel.
+De afbeelding wordt door de app zelf gelezen (`lib/calendarImage.js`): het is een vast sjabloon met 7 kolommen, gekleurde zakjes en een klokje. Het klokje is een 12-uurs wijzerplaat; het groene taartpunt loopt van het begin- tot het einduur (bv. 18:00–24:00 of 18:00–20:00). Lukt het lezen niet (bv. bij een nieuw sjabloon), dan gebruikt de app de tekst en toont het apparaat een waarschuwing. Bij *Instellingen → Gegevensbron* zie je welke bron actief is.
 
-Het voorbeeldbeeld (`img_ramassage`) in het antwoord wordt bewust genegeerd: het is voor elk adres hetzelfde vaste plaatje en klopt niet met de tekst.
+**Let op:** de kalender vermeldt geen feestdagverschuivingen. Rond feestdagen kan de dag afwijken; controleer dan de website van Net Brussel.
 
 ## Installeren en testen
 
@@ -59,8 +64,10 @@ Zit je in een omgeving waar Node's `fetch` niet door een proxy komt maar curl we
 
 ```
 lib/arp.js          API-client (straten, huisnummers, adres-id, kalender)
-lib/schedule.js     parser + berekening volgende ophaling + herinneringen (zuiver, getest)
+lib/calendarImage.js  leest de kalenderafbeelding (PNG, zonder externe pakketten)
+lib/fetchCalendar.js  haalt antwoord + afbeelding op, met terugval op de tekst
+lib/schedule.js     schema, volgende keer, uur-venster, herinneringen (zuiver, getest)
 lib/text.js         NL/EN teksten
 drivers/address/    driver (koppelen, flow-kaarten) + device (verversen, tikker, notificaties)
-test/               fixtures = echte API-antwoorden voor 3 Brusselse adressen
+test/               fixtures = echte API-antwoorden + kalenderafbeeldingen voor 3 Brusselse adressen
 ```

@@ -1,8 +1,18 @@
 'use strict';
 
 const Homey = require('homey');
-const arp = require('../../lib/arp');
-const { COLORS, parseCalendar, nextPickup, colorsOn, dueReminders, localNow, addDays } = require('../../lib/schedule');
+const { fetchCalendar } = require('../../lib/fetchCalendar');
+const {
+  COLORS,
+  parseCalendar,
+  nextPickup,
+  colorsOn,
+  isWindowOpen,
+  dueReminders,
+  dueWindowOpen,
+  localNow,
+  addDays,
+} = require('../../lib/schedule');
 const text = require('../../lib/text');
 
 const REFRESH_MS = 12 * 60 * 60 * 1000;
@@ -13,19 +23,19 @@ const FIRED_KEEP = 20;
 module.exports = class AddressDevice extends Homey.Device {
   async onInit() {
     this.schedule = null;
-    this.lastDate = null;
+    this.lastKey = null;
 
     // Laatst gekende kalender: werkt ook als ARP-GAN of het internet even weg is.
-    const cached = this.getStoreValue('calendar');
-    if (cached) {
+    const raw = this.getStoreValue('calendar');
+    if (raw) {
       try {
-        this.schedule = parseCalendar(cached);
+        this.schedule = parseCalendar(raw, this.getStoreValue('columns'));
       } catch (err) {
         this.error('Opgeslagen kalender is onbruikbaar', err.message);
       }
     }
 
-    await this.setSettings({ address: this.addressLabel() }).catch(this.error);
+    await this.setSettings({ address: this.addressLabel(), source: this.sourceLabel() }).catch(this.error);
     this.refreshTimer = this.homey.setInterval(() => this.refresh().catch(this.error), REFRESH_MS);
     this.tickTimer = this.homey.setInterval(() => this.tick().catch(this.error), TICK_MS);
 
@@ -38,14 +48,18 @@ module.exports = class AddressDevice extends Homey.Device {
     this.homey.clearInterval(this.tickTimer);
   }
 
-  async onSettings({ newSettings }) {
-    // Herbereken na het opslaan van de instellingen.
+  async onSettings() {
     this.homey.setTimeout(() => this.tick().catch(this.error), 500);
   }
 
   addressLabel() {
     const { street, number, zip, city } = this.getStore();
     return `${street} ${number}, ${zip} ${city}`;
+  }
+
+  sourceLabel() {
+    if (!this.schedule) return '-';
+    return this.schedule.source === 'image' ? 'Kalenderafbeelding ARP-GAN' : 'Tekst ARP-GAN (afbeelding onleesbaar)';
   }
 
   lang() {
@@ -60,13 +74,23 @@ module.exports = class AddressDevice extends Homey.Device {
   async refresh() {
     try {
       const { street, number, zip, city, adid } = this.getStore();
-      const raw = await arp.getCalendar({ street, number, zip, city, adid });
-      this.schedule = parseCalendar(raw);
+      const { raw, columns, imageError } = await fetchCalendar({ street, number, zip, city, adid });
+      this.schedule = parseCalendar(raw, columns);
       await this.setStoreValue('calendar', raw);
+      await this.setStoreValue('columns', columns);
       await this.setStoreValue('lastSuccess', Date.now());
-      await this.setSettings({ last_update: new Date().toLocaleString('nl-BE', { timeZone: this.homey.clock.getTimezone() }) });
-      await this.unsetWarning().catch(() => {});
+      await this.setSettings({
+        last_update: new Date().toLocaleString('nl-BE', { timeZone: this.homey.clock.getTimezone() }),
+        source: this.sourceLabel(),
+      });
       await this.setAvailable().catch(() => {});
+      if (imageError) {
+        this.error('Kalenderafbeelding niet gelezen:', imageError);
+        await this.setWarning(`Kalenderafbeelding niet leesbaar; tekst gebruikt (${imageError})`).catch(() => {});
+      } else {
+        await this.unsetWarning().catch(() => {});
+      }
+      this.lastKey = null;
       await this.updateCapabilities();
     } catch (err) {
       this.error('Kalender vernieuwen mislukt:', err.message);
@@ -82,11 +106,11 @@ module.exports = class AddressDevice extends Homey.Device {
   async updateCapabilities() {
     if (!this.schedule) return;
     const lang = this.lang();
-    const { date } = this.local();
+    const { date, minutes } = this.local();
 
     const nexts = {};
     for (const color of COLORS) {
-      nexts[color] = nextPickup(this.schedule, color, date);
+      nexts[color] = nextPickup(this.schedule, color, date, minutes);
       await this.setCapabilityValue(`pickup_${color}`, text.describe(nexts[color], lang)).catch(this.error);
     }
 
@@ -95,52 +119,74 @@ module.exports = class AddressDevice extends Homey.Device {
     if (upcoming.length) {
       const first = upcoming.reduce((a, [, n]) => (n.date < a ? n.date : a), upcoming[0][1].date);
       const colors = upcoming.filter(([, n]) => n.date === first).map(([c]) => c);
-      const next = nexts[colors[0]];
-      summary = `${text.relative(next, lang)}: ${text.bagList(colors, lang)}`;
+      summary = `${text.relative(nexts[colors[0]], lang)}: ${text.bagList(colors, lang)}`;
     }
     await this.setCapabilityValue('pickup_next', summary).catch(this.error);
-    this.lastDate = date;
   }
 
-  // Elke minuut: dagwissel verwerken en herinneringen versturen.
+  // Elke minuut: tegels bijwerken (dagwissel of einde van een venster) en meldingen versturen.
   async tick() {
     if (!this.schedule) return;
     const local = this.local();
-    if (local.date !== this.lastDate) await this.updateCapabilities();
+
+    // Tegels enkel opnieuw berekenen als de dag of het uur wisselt (vensters eindigen op een heel uur).
+    const key = `${local.date}|${Math.floor(local.minutes / 60)}`;
+    if (key !== this.lastKey) {
+      this.lastKey = key;
+      await this.updateCapabilities();
+    }
 
     const fired = this.getStoreValue('fired') || [];
-    const due = dueReminders(this.schedule, local, this.getSettings(), fired);
-    for (const reminder of due) {
-      await this.sendReminder(reminder);
-      fired.push(reminder.key);
+    const settings = this.getSettings();
+    const lang = this.lang();
+    const remember = async k => {
+      fired.push(k);
       await this.setStoreValue('fired', fired.slice(-FIRED_KEEP));
+    };
+
+    for (const reminder of dueReminders(this.schedule, local, settings, fired)) {
+      const message = text.reminderText(reminder, lang);
+      await this.notify(message);
+      await this.trigger(this.driver.reminderCard, reminder, message, { when: reminder.when, colors: reminder.colors });
+      await remember(reminder.key);
+    }
+
+    // Het venster om buiten te zetten gaat open (bv. 18:00).
+    const open = dueWindowOpen(this.schedule, local, fired);
+    if (open) {
+      const message = text.windowOpenText(open, lang);
+      if (settings.notify_window_open !== false) await this.notify(message);
+      await this.trigger(this.driver.windowOpenCard, open, message, { colors: open.colors });
+      await remember(open.key);
     }
   }
 
-  async sendReminder(reminder) {
-    const lang = this.lang();
-    const message = text.reminderText(reminder, lang);
-    this.log('Herinnering:', message);
-
+  async notify(message) {
+    this.log('Melding:', message);
     await this.homey.notifications.createNotification({ excerpt: `${this.getName()}: ${message}` }).catch(this.error);
-
-    const tokens = {
-      bags: text.bagList(reminder.colors, lang),
-      text: message,
-      date: reminder.date,
-      from: reminder.window ? reminder.window.from : '',
-      to: reminder.window ? reminder.window.to : '',
-    };
-    await this.driver.reminderCard
-      .trigger(this, tokens, { when: reminder.when, colors: reminder.colors })
-      .catch(this.error);
   }
 
-  // Voor de flow-conditie: moet deze zak vandaag/morgen buiten?
+  async trigger(card, event, message, state) {
+    const tokens = {
+      bags: text.bagList(event.colors, this.lang()),
+      text: message,
+      date: event.date,
+      from: event.window ? event.window.from : '',
+      to: event.window ? event.window.to : '',
+    };
+    await card.trigger(this, tokens, state).catch(this.error);
+  }
+
+  // Voor de flow-conditie: staat deze zak vandaag/morgen op de buitenzetkalender?
   isPickup(when, color) {
     if (!this.schedule) return false;
     const { date } = this.local();
     const colors = colorsOn(this.schedule, when === 'tomorrow' ? addDays(date, 1) : date);
     return color === 'any' ? colors.length > 0 : colors.includes(color);
+  }
+
+  // Voor de flow-conditie: mag deze zak nu buiten (vandaag én binnen het uur-venster)?
+  isWindowOpen(color) {
+    return Boolean(this.schedule) && isWindowOpen(this.schedule, color, this.local());
   }
 };

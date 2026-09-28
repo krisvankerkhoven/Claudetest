@@ -1,0 +1,120 @@
+{
+  "title": {
+    "en": "Putting out bags is now allowed",
+    "nl": "Buitenzetten van zakken mag nu"
+  },
+  "titleFormatted": {
+    "en": "Putting out [[color]] is now allowed",
+    "nl": "Het buitenzetten van [[color]] mag nu"
+  },
+  "hint": {
+    "en": "Fires when the time window for putting bags out starts (e.g. 18:00). The tokens contain the start and end time.",
+    "nl": "Gaat af wanneer het uur begint waarop je zakken buiten mag zetten (bv. 18:00). De tokens bevatten begin- en einduur."
+  },
+  "args": [
+    {
+      "type": "device",
+      "name": "device",
+      "filter": "driver_id=address"
+    },
+    {
+      "type": "dropdown",
+      "name": "color",
+      "title": {
+        "en": "Bag",
+        "nl": "Zak"
+      },
+      "values": [
+        {
+          "id": "any",
+          "label": {
+            "en": "Any bag",
+            "nl": "Elke zak"
+          }
+        },
+        {
+          "id": "white",
+          "label": {
+            "en": "White bag",
+            "nl": "Witte zak"
+          }
+        },
+        {
+          "id": "yellow",
+          "label": {
+            "en": "Yellow bag",
+            "nl": "Gele zak"
+          }
+        },
+        {
+          "id": "blue",
+          "label": {
+            "en": "Blue bag",
+            "nl": "Blauwe zak"
+          }
+        },
+        {
+          "id": "green",
+          "label": {
+            "en": "Green bag",
+            "nl": "Groene zak"
+          }
+        },
+        {
+          "id": "orange",
+          "label": {
+            "en": "Orange bag",
+            "nl": "Oranje zak"
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "bags",
+      "type": "string",
+      "title": {
+        "en": "Bags",
+        "nl": "Zakken"
+      },
+      "example": "witte en gele zakken"
+    },
+    {
+      "name": "text",
+      "type": "string",
+      "title": {
+        "en": "Message",
+        "nl": "Bericht"
+      },
+      "example": "Buitenzetten kan nu: witte en gele zakken (18:00–24:00)"
+    },
+    {
+      "name": "date",
+      "type": "string",
+      "title": {
+        "en": "Date",
+        "nl": "Datum"
+      },
+      "example": "2026-09-30"
+    },
+    {
+      "name": "from",
+      "type": "string",
+      "title": {
+        "en": "From",
+        "nl": "Vanaf"
+      },
+      "example": "18:00"
+    },
+    {
+      "name": "to",
+      "type": "string",
+      "title": {
+        "en": "Until",
+        "nl": "Tot"
+      },
+      "example": "24:00"
+    }
+  ]
+}

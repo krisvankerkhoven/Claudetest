@@ -174,13 +174,134 @@
           }
         ],
         "id": "pickup_reminder"
+      },
+      {
+        "title": {
+          "en": "Putting out bags is now allowed",
+          "nl": "Buitenzetten van zakken mag nu"
+        },
+        "titleFormatted": {
+          "en": "Putting out [[color]] is now allowed",
+          "nl": "Het buitenzetten van [[color]] mag nu"
+        },
+        "hint": {
+          "en": "Fires when the time window for putting bags out starts (e.g. 18:00). The tokens contain the start and end time.",
+          "nl": "Gaat af wanneer het uur begint waarop je zakken buiten mag zetten (bv. 18:00). De tokens bevatten begin- en einduur."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=address"
+          },
+          {
+            "type": "dropdown",
+            "name": "color",
+            "title": {
+              "en": "Bag",
+              "nl": "Zak"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "Any bag",
+                  "nl": "Elke zak"
+                }
+              },
+              {
+                "id": "white",
+                "label": {
+                  "en": "White bag",
+                  "nl": "Witte zak"
+                }
+              },
+              {
+                "id": "yellow",
+                "label": {
+                  "en": "Yellow bag",
+                  "nl": "Gele zak"
+                }
+              },
+              {
+                "id": "blue",
+                "label": {
+                  "en": "Blue bag",
+                  "nl": "Blauwe zak"
+                }
+              },
+              {
+                "id": "green",
+                "label": {
+                  "en": "Green bag",
+                  "nl": "Groene zak"
+                }
+              },
+              {
+                "id": "orange",
+                "label": {
+                  "en": "Orange bag",
+                  "nl": "Oranje zak"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "bags",
+            "type": "string",
+            "title": {
+              "en": "Bags",
+              "nl": "Zakken"
+            },
+            "example": "witte en gele zakken"
+          },
+          {
+            "name": "text",
+            "type": "string",
+            "title": {
+              "en": "Message",
+              "nl": "Bericht"
+            },
+            "example": "Buitenzetten kan nu: witte en gele zakken (18:00–24:00)"
+          },
+          {
+            "name": "date",
+            "type": "string",
+            "title": {
+              "en": "Date",
+              "nl": "Datum"
+            },
+            "example": "2026-09-30"
+          },
+          {
+            "name": "from",
+            "type": "string",
+            "title": {
+              "en": "From",
+              "nl": "Vanaf"
+            },
+            "example": "18:00"
+          },
+          {
+            "name": "to",
+            "type": "string",
+            "title": {
+              "en": "Until",
+              "nl": "Tot"
+            },
+            "example": "24:00"
+          }
+        ],
+        "id": "window_open"
       }
     ],
     "conditions": [
       {
         "title": {
-          "en": "Bag is put out",
-          "nl": "Zak moet buiten"
+          "en": "Bag is on the put-out calendar",
+          "nl": "Zak staat op de buitenzetkalender"
         },
         "titleFormatted": {
           "en": "[[color]] is put out [[when]]",
@@ -270,6 +391,80 @@
           }
         ],
         "id": "pickup_on"
+      },
+      {
+        "title": {
+          "en": "Putting out is allowed now",
+          "nl": "Buitenzetten mag nu"
+        },
+        "titleFormatted": {
+          "en": "Putting out [[color]] is allowed now",
+          "nl": "Het buitenzetten van [[color]] mag nu"
+        },
+        "hint": {
+          "en": "True today between the start and end time of the window.",
+          "nl": "Waar vandaag tussen het begin- en einduur van het venster."
+        },
+        "args": [
+          {
+            "type": "device",
+            "name": "device",
+            "filter": "driver_id=address"
+          },
+          {
+            "type": "dropdown",
+            "name": "color",
+            "title": {
+              "en": "Bag",
+              "nl": "Zak"
+            },
+            "values": [
+              {
+                "id": "any",
+                "label": {
+                  "en": "Any bag",
+                  "nl": "Elke zak"
+                }
+              },
+              {
+                "id": "white",
+                "label": {
+                  "en": "White bag",
+                  "nl": "Witte zak"
+                }
+              },
+              {
+                "id": "yellow",
+                "label": {
+                  "en": "Yellow bag",
+                  "nl": "Gele zak"
+                }
+              },
+              {
+                "id": "blue",
+                "label": {
+                  "en": "Blue bag",
+                  "nl": "Blauwe zak"
+                }
+              },
+              {
+                "id": "green",
+                "label": {
+                  "en": "Green bag",
+                  "nl": "Groene zak"
+                }
+              },
+              {
+                "id": "orange",
+                "label": {
+                  "en": "Orange bag",
+                  "nl": "Oranje zak"
+                }
+              }
+            ]
+          }
+        ],
+        "id": "window_is_open"
       }
     ],
     "actions": [
@@ -347,13 +542,22 @@
           },
           "children": [
             {
+              "id": "notify_window_open",
+              "type": "checkbox",
+              "value": true,
+              "label": {
+                "en": "Notify when putting out is allowed (start of the time window)",
+                "nl": "Melding zodra buitenzetten mag (begin van het uur-venster)"
+              }
+            },
+            {
               "id": "notify_same_day",
               "type": "checkbox",
               "label": {
                 "en": "Notify on the day itself",
                 "nl": "Melding op de dag zelf"
               },
-              "value": true
+              "value": false
             },
             {
               "id": "notify_same_day_time",
@@ -464,6 +668,15 @@
                 "nl": "Laatst bijgewerkt"
               },
               "value": "-"
+            },
+            {
+              "id": "source",
+              "type": "label",
+              "value": "-",
+              "label": {
+                "en": "Data source",
+                "nl": "Gegevensbron"
+              }
             }
           ]
         }
@@ -480,7 +693,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_blue.svg"
     },
     "pickup_green": {
       "type": "string",
@@ -490,7 +704,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_green.svg"
     },
     "pickup_next": {
       "type": "string",
@@ -500,7 +715,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_next.svg"
     },
     "pickup_orange": {
       "type": "string",
@@ -510,7 +726,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_orange.svg"
     },
     "pickup_white": {
       "type": "string",
@@ -520,7 +737,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_white.svg"
     },
     "pickup_yellow": {
       "type": "string",
@@ -530,7 +748,8 @@
       },
       "getable": true,
       "setable": false,
-      "uiComponent": "sensor"
+      "uiComponent": "sensor",
+      "icon": "/assets/capabilities/pickup_yellow.svg"
     }
   }
 }

@@ -1,11 +1,15 @@
 {
   "title": {
-    "en": "Bag is on the put-out calendar",
-    "nl": "Zak staat op de buitenzetkalender"
+    "en": "Putting out is allowed now",
+    "nl": "Buitenzetten mag nu"
   },
   "titleFormatted": {
-    "en": "[[color]] is put out [[when]]",
-    "nl": "[[color]] moet buiten [[when]]"
+    "en": "Putting out [[color]] is allowed now",
+    "nl": "Het buitenzetten van [[color]] mag nu"
+  },
+  "hint": {
+    "en": "True today between the start and end time of the window.",
+    "nl": "Waar vandaag tussen het begin- en einduur van het venster."
   },
   "args": [
     {
@@ -61,30 +65,6 @@
           "label": {
             "en": "Orange bag",
             "nl": "Oranje zak"
-          }
-        }
-      ]
-    },
-    {
-      "type": "dropdown",
-      "name": "when",
-      "title": {
-        "en": "When",
-        "nl": "Wanneer"
-      },
-      "values": [
-        {
-          "id": "today",
-          "label": {
-            "en": "Today",
-            "nl": "Vandaag"
-          }
-        },
-        {
-          "id": "tomorrow",
-          "label": {
-            "en": "Tomorrow",
-            "nl": "Morgen"
           }
         }
       ]

@@ -8,15 +8,18 @@ const fs = require('node:fs');
 const path = require('node:path');
 const Module = require('node:module');
 
-const fixture = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'thiernessestraat.json'), 'utf8'));
+const fixtureDir = path.join(__dirname, 'fixtures');
+const fixture = JSON.parse(fs.readFileSync(path.join(fixtureDir, 'thiernessestraat.json'), 'utf8'));
+const columns = require('../lib/calendarImage').analyzeImage(fs.readFileSync(path.join(fixtureDir, 'thiernessestraat.png')));
 
 class FakeDevice {
   constructor() {
     this.caps = {};
     this.store = { street: 'Thiernessestraat', number: '12', zip: '1070', city: 'Anderlecht', adid: '2007686' };
     this.settings = {
-      notify_same_day: true,
+      notify_same_day: false,
       notify_same_day_time: '17:00',
+      notify_window_open: true,
       notify_evening_before: false,
       notify_evening_before_time: '20:00',
       notify_white: true,
@@ -37,10 +40,11 @@ class FakeDevice {
       clock: { getTimezone: () => 'Europe/Brussels' },
       notifications: { createNotification: async n => this.notifications.push(n.excerpt) },
     };
-    this.driver = { reminderCard: { trigger: async (dev, tokens, state) => this.triggers.push({ tokens, state }) } };
+    const record = name => ({ trigger: async (dev, tokens, state) => this.triggers.push({ name, tokens, state }) });
+    this.driver = { reminderCard: record('reminder'), windowOpenCard: record('window_open') };
   }
   log() {}
-  error(...a) { this.calls.push(['error', ...a]); }
+  error = (...a) => { this.calls.push(['error', ...a]); };
   getStore() { return this.store; }
   getStoreValue(k) { return this.store[k]; }
   async setStoreValue(k, v) { this.store[k] = v; }
@@ -59,7 +63,9 @@ Module._load = function (request, ...rest) {
   if (request === 'homey') return { Device: FakeDevice, Driver: class {}, App: class {} };
   return realLoad.call(this, request, ...rest);
 };
-const arp = require('../lib/arp');
+// Geen echt netwerk: fetchCalendar wordt door een aanpasbare stub vervangen vóór het device geladen wordt.
+let fetchImpl = async () => ({ raw: fixture, columns, imageError: null });
+require('../lib/fetchCalendar').fetchCalendar = (...args) => fetchImpl(...args);
 const AddressDevice = require('../drivers/address/device');
 
 function freezeTime(iso) {
@@ -71,55 +77,107 @@ function freezeTime(iso) {
   return () => { global.Date = RealDate; };
 }
 
-test('onInit met cache vult de capabilities en stuurt de herinnering van 17:00 één keer', async () => {
-  const restore = freezeTime('2026-09-28T15:00:00Z');
+test.beforeEach(() => { fetchImpl = async () => ({ raw: fixture, columns, imageError: null }); });
+
+test('tegels tonen de dag én het uur; oranje staat er nu bij', async () => {
+  const restore = freezeTime('2026-09-28T15:00:00Z'); // maandag 17:00 in Brussel
   try {
-    arp.getCalendar = async () => fixture;
     const dev = new AddressDevice();
     dev.store.calendar = fixture;
+    dev.store.columns = columns;
     await dev.onInit();
 
-    assert.strictEqual(dev.caps.pickup_white, 'Vandaag (ma 28 sep)');
-    assert.strictEqual(dev.caps.pickup_yellow, 'do 1 okt (over 3 d)');
-    assert.strictEqual(dev.caps.pickup_orange, 'Geen ophaling');
-    assert.strictEqual(dev.caps.pickup_next, 'Vandaag: witte, blauwe en groene zakken');
+    assert.strictEqual(dev.caps.pickup_white, 'wo 30 sep 18:00–24:00');
+    assert.strictEqual(dev.caps.pickup_yellow, 'wo 30 sep 18:00–24:00');
+    assert.strictEqual(dev.caps.pickup_blue, 'zo 4 okt 18:00–24:00');
+    assert.strictEqual(dev.caps.pickup_green, 'ma 12 okt 05:00–12:00', 'maandagochtend is voorbij');
+    assert.strictEqual(dev.caps.pickup_orange, 'ma 5 okt 05:00–12:00');
+    assert.strictEqual(dev.caps.pickup_next, 'wo 30 sep: witte en gele zakken');
+    assert.strictEqual(dev.notifications.length, 0, 'niets te melden op maandag om 17:00');
+    assert.strictEqual(dev.settings.source, 'Kalenderafbeelding ARP-GAN');
+  } finally {
+    restore();
+  }
+});
+
+test('om 18:00 gaat het venster open: melding, flow-trigger met uren, en de conditie', async () => {
+  const restore = freezeTime('2026-09-30T16:00:00Z'); // woensdag 18:00 in Brussel
+  try {
+    const dev = new AddressDevice();
+    dev.store.calendar = fixture;
+    dev.store.columns = columns;
+    await dev.onInit();
 
     assert.strictEqual(dev.notifications.length, 1);
-    assert.match(dev.notifications[0], /Vandaag buitenzetten: witte, blauwe en groene zakken \(18:00–24:00\)/);
-    assert.deepStrictEqual(dev.triggers[0].state, { when: 'today', colors: ['white', 'blue', 'green'] });
-    assert.strictEqual(dev.triggers[0].tokens.from, '18:00');
+    assert.match(dev.notifications[0], /Buitenzetten kan nu: witte en gele zakken \(18:00–24:00\)/);
+    const [event] = dev.triggers;
+    assert.strictEqual(event.name, 'window_open');
+    assert.deepStrictEqual(event.state.colors, ['white', 'yellow']);
+    assert.strictEqual(event.tokens.from, '18:00');
+    assert.strictEqual(event.tokens.to, '24:00');
+    assert.strictEqual(event.tokens.bags, 'witte en gele zakken');
+    assert.strictEqual(dev.caps.pickup_white, 'Vandaag 18:00–24:00');
 
-    await dev.tick(); // tweede minuut: niet opnieuw versturen
+    await dev.tick(); // volgende minuut: niet opnieuw
     assert.strictEqual(dev.notifications.length, 1);
-    assert.strictEqual(dev.isPickup('today', 'blue'), true);
-    assert.strictEqual(dev.isPickup('today', 'yellow'), false);
+    assert.strictEqual(dev.triggers.length, 1);
+
+    assert.strictEqual(dev.isWindowOpen('white'), true);
+    assert.strictEqual(dev.isWindowOpen('blue'), false);
+    assert.strictEqual(dev.isPickup('today', 'yellow'), true);
     assert.strictEqual(dev.isPickup('tomorrow', 'any'), false);
   } finally {
     restore();
   }
 });
 
-test('refresh bewaart de kalender en overleeft een mislukte aanvraag met cache', async () => {
-  const restore = freezeTime('2026-09-28T09:00:00Z');
+test('melding bij begin van het venster kan uitgezet worden; de flow-trigger blijft werken', async () => {
+  const restore = freezeTime('2026-09-30T16:00:00Z');
   try {
     const dev = new AddressDevice();
-    arp.getCalendar = async () => fixture;
-    await dev.refresh();
-    assert.deepStrictEqual(dev.store.calendar, fixture);
-    assert.ok(dev.settings.last_update);
-
-    arp.getCalendar = async () => { throw new Error('offline'); };
-    await assert.rejects(() => dev.refresh(), /offline/);
-    assert.strictEqual(dev.unavailable, undefined, 'met cache blijft het apparaat beschikbaar');
-    assert.strictEqual(dev.caps.pickup_white, 'Vandaag (ma 28 sep)');
+    dev.settings.notify_window_open = false;
+    dev.store.calendar = fixture;
+    dev.store.columns = columns;
+    await dev.onInit();
+    assert.strictEqual(dev.notifications.length, 0);
+    assert.strictEqual(dev.triggers.length, 1);
   } finally {
     restore();
   }
 });
 
+test('refresh bewaart kalender + afbeeldingsdata en overleeft een mislukte aanvraag met cache', async () => {
+  const restore = freezeTime('2026-09-30T09:00:00Z');
+  try {
+    const dev = new AddressDevice();
+    fetchImpl = async () => ({ raw: fixture, columns, imageError: null });
+    await dev.refresh();
+    assert.deepStrictEqual(dev.store.calendar, fixture);
+    assert.deepStrictEqual(dev.store.columns, columns);
+    assert.ok(dev.settings.last_update);
+
+    fetchImpl = async () => { throw new Error('offline'); };
+    await assert.rejects(() => dev.refresh(), /offline/);
+    assert.strictEqual(dev.unavailable, undefined, 'met cache blijft het apparaat beschikbaar');
+    assert.strictEqual(dev.caps.pickup_white, 'Vandaag 18:00–24:00', 'woensdag 11:00: het venster begint vanavond');
+  } finally {
+    restore();
+  }
+});
+
+test('afbeelding onleesbaar: terugval op tekst met waarschuwing', async () => {
+  const dev = new AddressDevice();
+  dev.warning = null;
+  dev.setWarning = async m => { dev.warning = m; };
+  fetchImpl = async () => ({ raw: fixture, columns: null, imageError: 'Onverwacht PNG-formaat' });
+  await dev.refresh();
+  assert.strictEqual(dev.settings.source, 'Tekst ARP-GAN (afbeelding onleesbaar)');
+  assert.match(dev.warning, /Onverwacht PNG-formaat/);
+});
+
 test('zonder cache en zonder internet wordt het apparaat onbeschikbaar gemeld', async () => {
   const dev = new AddressDevice();
-  arp.getCalendar = async () => { throw new Error('offline'); };
+  fetchImpl = async () => { throw new Error('offline'); };
   await assert.rejects(() => dev.refresh(), /offline/);
   assert.strictEqual(dev.unavailable, 'offline');
 });

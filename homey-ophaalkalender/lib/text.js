@@ -12,10 +12,10 @@ const TEXT = {
     and: ' en ',
     today: 'Vandaag',
     tomorrow: 'Morgen',
-    inDays: n => `over ${n} d`,
     none: 'Geen ophaling',
     setOutToday: 'Vandaag buitenzetten',
     setOutTomorrow: 'Morgen buitenzetten',
+    windowOpen: 'Buitenzetten kan nu',
     noPickup: 'Geen ophaling gepland',
   },
   en: {
@@ -27,10 +27,10 @@ const TEXT = {
     and: ' and ',
     today: 'Today',
     tomorrow: 'Tomorrow',
-    inDays: n => `in ${n} d`,
     none: 'No collection',
     setOutToday: 'Put out today',
     setOutTomorrow: 'Put out tomorrow',
+    windowOpen: 'You can put out now',
     noPickup: 'No collection planned',
   },
 };
@@ -51,14 +51,12 @@ function bagList(colors, lang) {
   return `${joined} ${names.length > 1 ? s.bags : s.bag}`;
 }
 
-// Waarde voor een capability: "ma 5 okt (over 7 d)", "Morgen (di 29 sep)" of "Geen ophaling".
+// Waarde voor een capability: "Vandaag 18:00–24:00", "do 1 okt 18:00–24:00" of "Geen ophaling".
 function describe(next, lang) {
   const s = t(lang);
   if (!next) return s.none;
-  const date = formatDate(next.date, lang);
-  if (next.daysUntil === 0) return `${s.today} (${date})`;
-  if (next.daysUntil === 1) return `${s.tomorrow} (${date})`;
-  return `${date} (${s.inDays(next.daysUntil)})`;
+  const day = next.daysUntil === 0 ? s.today : next.daysUntil === 1 ? s.tomorrow : formatDate(next.date, lang);
+  return `${day}${next.window ? ` ${next.window.from}–${next.window.to}` : ''}`;
 }
 
 function relative(next, lang) {
@@ -78,4 +76,8 @@ function reminderText(reminder, lang) {
   return `${head}: ${bagList(reminder.colors, lang)}${windowText(reminder.window)}`;
 }
 
-module.exports = { t, formatDate, bagList, describe, relative, windowText, reminderText };
+function windowOpenText(event, lang) {
+  return `${t(lang).windowOpen}: ${bagList(event.colors, lang)}${windowText(event.window)}`;
+}
+
+module.exports = { t, formatDate, bagList, describe, relative, windowText, reminderText, windowOpenText };

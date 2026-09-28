@@ -51,13 +51,22 @@
       },
       "children": [
         {
+          "id": "notify_window_open",
+          "type": "checkbox",
+          "value": true,
+          "label": {
+            "en": "Notify when putting out is allowed (start of the time window)",
+            "nl": "Melding zodra buitenzetten mag (begin van het uur-venster)"
+          }
+        },
+        {
           "id": "notify_same_day",
           "type": "checkbox",
           "label": {
             "en": "Notify on the day itself",
             "nl": "Melding op de dag zelf"
           },
-          "value": true
+          "value": false
         },
         {
           "id": "notify_same_day_time",
@@ -168,6 +177,15 @@
             "nl": "Laatst bijgewerkt"
           },
           "value": "-"
+        },
+        {
+          "id": "source",
+          "type": "label",
+          "value": "-",
+          "label": {
+            "en": "Data source",
+            "nl": "Gegevensbron"
+          }
         }
       ]
     }

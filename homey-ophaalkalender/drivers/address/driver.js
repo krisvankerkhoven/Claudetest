@@ -3,6 +3,7 @@
 const Homey = require('homey');
 const arp = require('../../lib/arp');
 const { parseCalendar } = require('../../lib/schedule');
+const { fetchCalendar } = require('../../lib/fetchCalendar');
 
 module.exports = class AddressDriver extends Homey.Driver {
   async onInit() {
@@ -11,8 +12,17 @@ module.exports = class AddressDriver extends Homey.Driver {
       async (args, state) => args.when === state.when && (args.color === 'any' || state.colors.includes(args.color)),
     );
 
+    this.windowOpenCard = this.homey.flow.getDeviceTriggerCard('window_open');
+    this.windowOpenCard.registerRunListener(
+      async (args, state) => args.color === 'any' || state.colors.includes(args.color),
+    );
+
     this.homey.flow.getConditionCard('pickup_on').registerRunListener(async args => {
       return args.device.isPickup(args.when, args.color);
+    });
+
+    this.homey.flow.getConditionCard('window_is_open').registerRunListener(async args => {
+      return args.device.isWindowOpen(args.color);
     });
 
     this.homey.flow.getActionCard('refresh').registerRunListener(async args => {
@@ -31,7 +41,8 @@ module.exports = class AddressDriver extends Homey.Driver {
     // Controleert het adres én de kalender voor de gebruiker verder gaat.
     session.setHandler('select', async ({ street, number, zip, city }) => {
       const adid = await arp.validateAddress({ street, number, zip });
-      const schedule = parseCalendar(await arp.getCalendar({ street, number, zip, city, adid }));
+      const { raw, columns } = await fetchCalendar({ street, number, zip, city, adid });
+      const schedule = parseCalendar(raw, columns);
       selected = { street, number, zip, city, adid };
       return { label: schedule.label };
     });
