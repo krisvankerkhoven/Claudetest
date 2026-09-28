@@ -30,10 +30,16 @@ const LAYOUT = {
   minBagPixels: 270, // oppervlakte van een zakje (in 2000px-eenheden) minstens nodig om mee te tellen
 };
 
+// Verhoog dit getal als de manier van lezen verandert: bewaarde resultaten worden dan opnieuw berekend.
+const ANALYZER_VERSION = 1;
+
 class ImageError extends Error {}
 
-// Minimale PNG-decoder (8 bit RGB/RGBA, niet-interlaced); leest enkel de eerste `maxRows` rijen.
-function decodePng(buf, maxRows) {
+// Minimale PNG-lezer (8 bit RGB/RGBA, niet-interlaced) die de afbeelding als stroom uitpakt:
+// rij per rij naar `onRow(y, row)`, en stopt na `maxRows`. Zo blijft het geheugengebruik klein
+// (een volledige uitgepakte afbeelding van 3425×2596 zou ruim 26 MB kosten, te veel voor een Homey-app).
+// `row` wordt hergebruikt; wie hem wil bewaren moet hem kopiëren.
+function readPngRows(buf, maxRows, onRow) {
   if (buf.length < 8 || buf.toString('latin1', 1, 4) !== 'PNG') throw new ImageError('Geen PNG-afbeelding');
   let pos = 8;
   let width;
@@ -65,38 +71,60 @@ function decodePng(buf, maxRows) {
   const bpp = colorType === 2 ? 3 : 4;
   const stride = width * bpp;
   const rows = Math.min(height, maxRows);
-  const raw = zlib.inflateSync(Buffer.concat(parts));
-  const out = Buffer.alloc(rows * stride);
-  for (let y = 0; y < rows; y++) {
-    const filter = raw[y * (stride + 1)];
-    const src = y * (stride + 1) + 1;
-    const dst = y * stride;
-    for (let x = 0; x < stride; x++) {
-      const a = x >= bpp ? out[dst + x - bpp] : 0;
-      const b = y ? out[dst - stride + x] : 0;
-      const c = x >= bpp && y ? out[dst - stride + x - bpp] : 0;
-      let v = raw[src + x];
-      if (filter === 1) v += a;
-      else if (filter === 2) v += b;
-      else if (filter === 3) v += (a + b) >> 1;
-      else if (filter === 4) {
-        const p = a + b - c;
-        const pa = Math.abs(p - a);
-        const pb = Math.abs(p - b);
-        const pc = Math.abs(p - c);
-        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+  let prev = Buffer.alloc(stride);
+  let cur = Buffer.alloc(stride);
+  let carry = Buffer.alloc(0);
+  let y = 0;
+
+  return new Promise((resolve, reject) => {
+    const inflate = zlib.createInflate();
+    let finished = false;
+    const finish = err => {
+      if (finished) return;
+      finished = true;
+      inflate.destroy();
+      if (err) reject(err);
+      else resolve({ width, height, bpp });
+    };
+
+    inflate.on('error', err => finish(new ImageError(`PNG-data onleesbaar: ${err.message}`)));
+    inflate.on('end', () => finish(y < rows ? new ImageError('PNG is onvolledig') : null));
+    inflate.on('data', chunk => {
+      if (finished) return;
+      carry = carry.length ? Buffer.concat([carry, chunk]) : chunk;
+      let offset = 0;
+      while (!finished && carry.length - offset >= stride + 1 && y < rows) {
+        const filter = carry[offset];
+        const src = offset + 1;
+        for (let x = 0; x < stride; x++) {
+          const a = x >= bpp ? cur[x - bpp] : 0;
+          const b = prev[x];
+          const c = x >= bpp ? prev[x - bpp] : 0;
+          let v = carry[src + x];
+          if (filter === 1) v += a;
+          else if (filter === 2) v += b;
+          else if (filter === 3) v += (a + b) >> 1;
+          else if (filter === 4) {
+            const p = a + b - c;
+            const pa = Math.abs(p - a);
+            const pb = Math.abs(p - b);
+            const pc = Math.abs(p - c);
+            v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+          }
+          cur[x] = v & 255;
+        }
+        offset += stride + 1;
+        onRow(y, cur);
+        y++;
+        [prev, cur] = [cur, prev];
       }
-      out[dst + x] = v & 255;
-    }
-  }
-  return {
-    width,
-    height,
-    pixel: (x, y) => {
-      const i = (y * width + x) * bpp;
-      return [out[i], out[i + 1], out[i + 2]];
-    },
-  };
+      carry = carry.subarray(offset);
+      if (y >= rows) finish(null);
+    });
+
+    for (const part of parts) inflate.write(part);
+    inflate.end();
+  });
 }
 
 const near = (p, c, tol = 6) => Math.abs(p[0] - c[0]) <= tol && Math.abs(p[1] - c[1]) <= tol && Math.abs(p[2] - c[2]) <= tol;
@@ -105,14 +133,14 @@ const hhmm = hours => `${String(Math.floor(hours)).padStart(2, '0')}:${hours % 1
 
 // Het klokje is een 12-uurs wijzerplaat: uur h staat op h*30° met de klok mee vanaf boven.
 // De groene taart loopt van het begin- tot het einduur. Ochtend (< 6 u) of avond (>= 6 u -> +12).
-function readClock(img, x0, x1, S) {
+function readClock(pixel, x0, x1, S) {
   const yMid = Math.round(LAYOUT.clockRow * S);
   const band = Math.max(2, Math.round(3 * S));
   let minX = Infinity;
   let maxX = -1;
   for (let y = yMid - band; y <= yMid + band; y++) {
     for (let x = x0; x < x1; x++) {
-      if (isDark(img.pixel(x, y))) {
+      if (isDark(pixel(x, y))) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
       }
@@ -127,7 +155,7 @@ function readClock(img, x0, x1, S) {
   let count = 0;
   for (let d = 0; d < 360; d++) {
     const t = (d * Math.PI) / 180;
-    const p = img.pixel(Math.round(cx + ring * Math.sin(t)), Math.round(yMid - ring * Math.cos(t)));
+    const p = pixel(Math.round(cx + ring * Math.sin(t)), Math.round(yMid - ring * Math.cos(t)));
     green.push(near(p, CLOCK_GREEN, 10));
     if (green[d]) count++;
   }
@@ -145,35 +173,52 @@ function readClock(img, x0, x1, S) {
 
 // Geeft per weekdag de zakken (colors) en het buitenzet-uur (window) terug:
 //   [{ weekday: 1, colors: ['white', ...], window: { from: '18:00', to: '24:00' } | null }, ...]
-function analyzeImage(buf) {
-  const S0 = 2000;
-  // Eerst enkel de header lezen voor de schaal, dan rijen tot onder het klokje (straal ~65).
-  const width = buf.readUInt32BE(16);
-  const S = width / S0;
-  const maxRows = Math.round((LAYOUT.clockRow + 70) * S);
-  const img = decodePng(buf, maxRows);
-  if (Math.abs(img.width / img.height - 3425 / 2596) > 0.02) throw new ImageError('Onverwachte afbeeldingsverhouding');
-
+// Verwerkt de afbeelding rij per rij: de zakjes worden meteen geteld en enkel de rijen rond het
+// klokje worden bewaard (ongeveer 2 MB in plaats van 26 MB).
+async function analyzeImage(buf) {
+  if (buf.length < 24) throw new ImageError('Geen PNG-afbeelding');
+  const S = buf.readUInt32BE(16) / 2000;
+  const bagsTop = Math.round(LAYOUT.bagsTop * S);
+  const bagsBottom = Math.round(LAYOUT.bagsBottom * S);
+  const clockTop = Math.round((LAYOUT.clockRow - 70) * S);
+  const clockBottom = Math.round((LAYOUT.clockRow + 70) * S);
   const colWidth = ((LAYOUT.right - LAYOUT.left) / 7) * S;
   const minPixels = LAYOUT.minBagPixels * S * S;
-  const columns = [];
-
-  for (let c = 0; c < 7; c++) {
+  const bounds = Array.from({ length: 7 }, (_, c) => {
     const x0 = Math.round(LAYOUT.left * S + c * colWidth);
-    const x1 = Math.round(x0 + colWidth);
-    const counts = {};
-    for (let y = Math.round(LAYOUT.bagsTop * S); y < Math.round(LAYOUT.bagsBottom * S); y++) {
-      for (let x = x0; x < x1; x++) {
-        const p = img.pixel(x, y);
-        for (const [name, color] of Object.entries(BAG_COLORS)) if (near(p, color)) counts[name] = (counts[name] || 0) + 1;
+    return [x0, Math.round(x0 + colWidth)];
+  });
+  const counts = bounds.map(() => ({}));
+  const kept = new Map();
+  const bpp = buf[25] === 6 ? 4 : 3; // kleurtype uit de PNG-header: 6 = RGBA, anders RGB
+
+  const info = await readPngRows(buf, clockBottom + 1, (y, row) => {
+    if (y >= bagsTop && y < bagsBottom) {
+      for (let c = 0; c < 7; c++) {
+        const [x0, x1] = bounds[c];
+        for (let x = x0; x < x1; x++) {
+          const i = x * bpp;
+          const p = [row[i], row[i + 1], row[i + 2]];
+          for (const name of COLOR_ORDER) if (near(p, BAG_COLORS[name])) counts[c][name] = (counts[c][name] || 0) + 1;
+        }
       }
     }
-    const colors = COLOR_ORDER.filter(name => counts[name] > minPixels);
-    columns.push({ weekday: COLUMN_WEEKDAYS[c], colors, window: colors.length ? readClock(img, x0, x1, S) : null });
-  }
+    if (y >= clockTop) kept.set(y, Buffer.from(row));
+  });
+  if (Math.abs(info.width / info.height - 3425 / 2596) > 0.02) throw new ImageError('Onverwachte afbeeldingsverhouding');
 
+  const pixel = (x, y) => {
+    const row = kept.get(y);
+    const i = x * bpp;
+    return row ? [row[i], row[i + 1], row[i + 2]] : [255, 255, 255];
+  };
+
+  const columns = bounds.map(([x0, x1], c) => {
+    const colors = COLOR_ORDER.filter(name => counts[c][name] > minPixels);
+    return { weekday: COLUMN_WEEKDAYS[c], colors, window: colors.length ? readClock(pixel, x0, x1, S) : null };
+  });
   if (!columns.some(col => col.colors.length)) throw new ImageError('Geen zakken herkend in de kalenderafbeelding');
   return columns;
 }
 
-module.exports = { analyzeImage, ImageError };
+module.exports = { analyzeImage, ImageError, ANALYZER_VERSION };

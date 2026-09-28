@@ -70,14 +70,25 @@ module.exports = class AddressDevice extends Homey.Device {
     return localNow(new Date(), this.homey.clock.getTimezone());
   }
 
-  // Haalt de kalender op bij ARP-GAN.
-  async refresh() {
+  // Haalt de kalender op bij ARP-GAN. Twee verversingen tegelijk delen hetzelfde resultaat.
+  refresh() {
+    if (!this.refreshing) {
+      this.refreshing = this.doRefresh().finally(() => {
+        this.refreshing = null;
+      });
+    }
+    return this.refreshing;
+  }
+
+  async doRefresh() {
     try {
       const { street, number, zip, city, adid } = this.getStore();
-      const { raw, columns, imageError } = await fetchCalendar({ street, number, zip, city, adid });
+      const previous = { columns: this.getStoreValue('columns'), meta: this.getStoreValue('columnsMeta') };
+      const { raw, columns, meta, imageError } = await fetchCalendar({ street, number, zip, city, adid }, previous);
       this.schedule = parseCalendar(raw, columns);
       await this.setStoreValue('calendar', raw);
       await this.setStoreValue('columns', columns);
+      await this.setStoreValue('columnsMeta', meta);
       await this.setStoreValue('lastSuccess', Date.now());
       await this.setSettings({
         last_update: new Date().toLocaleString('nl-BE', { timeZone: this.homey.clock.getTimezone() }),

@@ -20,7 +20,13 @@ const { describe, reminderText, windowOpenText, bagList } = require('../lib/text
 
 const dir = path.join(__dirname, 'fixtures');
 const json = name => JSON.parse(fs.readFileSync(path.join(dir, `${name}.json`), 'utf8'));
-const image = name => analyzeImage(fs.readFileSync(path.join(dir, `${name}.png`)));
+const images = {};
+test.before(async () => {
+  for (const name of ['thiernessestraat', 'nieuwstraat', 'molenbeek']) {
+    images[name] = await analyzeImage(fs.readFileSync(path.join(dir, `${name}.png`)));
+  }
+});
+const image = name => images[name];
 const calendar = name => parseCalendar(json(name), image(name));
 
 // 2026-09-28 is een maandag.
@@ -45,8 +51,10 @@ test('afbeelding Molenbeek: uren 18:00–20:00; Nieuwstraat: vier zakken op woen
   assert.deepStrictEqual(nieuwstraat[0].colors, ['white', 'yellow', 'green', 'orange']);
 });
 
-test('analyzeImage weigert iets dat geen kalenderafbeelding is', () => {
-  assert.throws(() => analyzeImage(Buffer.from('dit is geen png dit is geen png dit')), /PNG/);
+test('analyzeImage weigert iets dat geen kalenderafbeelding is', async () => {
+  await assert.rejects(() => analyzeImage(Buffer.from('dit is geen png dit is geen png dit')), /PNG/);
+  const truncated = fs.readFileSync(path.join(dir, 'thiernessestraat.png')).subarray(0, 30000);
+  await assert.rejects(() => analyzeImage(truncated), /PNG/);
 });
 
 test('schema Thiernessestraat uit de afbeelding (bron: image)', () => {

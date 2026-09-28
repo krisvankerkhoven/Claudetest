@@ -10,7 +10,10 @@ const Module = require('node:module');
 
 const fixtureDir = path.join(__dirname, 'fixtures');
 const fixture = JSON.parse(fs.readFileSync(path.join(fixtureDir, 'thiernessestraat.json'), 'utf8'));
-const columns = require('../lib/calendarImage').analyzeImage(fs.readFileSync(path.join(fixtureDir, 'thiernessestraat.png')));
+let columns;
+test.before(async () => {
+  columns = await require('../lib/calendarImage').analyzeImage(fs.readFileSync(path.join(fixtureDir, 'thiernessestraat.png')));
+});
 
 class FakeDevice {
   constructor() {
