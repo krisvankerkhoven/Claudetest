@@ -2,8 +2,10 @@ name: Tankstation prijzen check
 
 on:
   schedule:
-    # Elke 30 minuten. Pas aan naar wens (let op GitHub's minimum van ~5 min).
-    - cron: "*/30 * * * *"
+    # Elk uur. GitHub's cron-scheduler houdt dit niet strikt aan (effectief
+    # eerder om de 4-6 uur bij hogere intervallen zoals */30) — een uurlijkse
+    # instelling sluit realistischer aan bij wat GitHub daadwerkelijk haalt.
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 permissions:
