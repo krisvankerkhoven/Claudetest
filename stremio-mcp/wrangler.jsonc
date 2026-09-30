@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stremio-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "durable_objects": { "bindings": [{ "name": "MCP_OBJECT", "class_name": "MyMCP" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["MyMCP"] }],
+  "kv_namespaces": [
+    { "binding": "OAUTH_KV", "id": "REPLACE_WITH_KV_ID" },
+    { "binding": "SNAPSHOTS", "id": "REPLACE_WITH_KV_ID" }
+  ],
+  "vars": {
+    // Public base URL of this Worker (no trailing slash), e.g. https://stremio-mcp.<subdomain>.workers.dev
+    "PUBLIC_URL": "https://REPLACE_WITH_WORKER_URL",
+    "ALLOWED_GITHUB_USER": "REPLACE_WITH_YOUR_GITHUB_USERNAME",
+    // Flip to "true" only after you approved the first payload preview.
+    "WRITES_ENABLED": "false"
+  },
+  "observability": { "enabled": true }
+}
