@@ -204,8 +204,10 @@ afzender en raakt verder niets in je inbox).
 
 ### Werking
 
-1. Elke 15 minuten doorzoekt het script Gmail op nieuwe, nog niet verwerkte
-   mails van de nieuwsbrief-afzender.
+1. Elke 12 uur doorzoekt het script Gmail op nieuwe, nog niet verwerkte
+   mails van de nieuwsbrief-afzender. Is er niets nieuws, dan stopt het
+   script meteen — de Claude API wordt enkel aangeroepen als er
+   effectief een nieuwe mail gevonden is.
 2. De mailtekst wordt naar de Claude API gestuurd (niet vaste regex-patronen,
    zodat het bestand blijft tegen wisselende formulering in toekomstige
    nieuwsbrieven) met de vraag om de prijsinfo per brandstof te structureren

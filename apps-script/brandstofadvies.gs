@@ -23,7 +23,9 @@
  *    Google om toestemming (Gmail lezen/labelen, externe verzoeken) —
  *    dat is je eigen script in je eigen account, dus dat is normaal.
  *    Dit zet een tijdgestuurde trigger die "checkNewsletter" elke
- *    15 minuten uitvoert.
+ *    12 uur uitvoert. Claude wordt enkel aangeroepen als er effectief
+ *    een nieuwe, nog niet verwerkte mail gevonden wordt — bij niets
+ *    nieuws stopt het script meteen, zonder API-kosten.
  * 5. In Homey: maak een nieuwe "Webhook ontvangen"-trigger met
  *    event-naam "brandstofadvies", en 8 "Lees Tag als JSON en selecteer
  *    pad..."-kaarten voor: fuel, direction, new_price, current_price,
@@ -39,7 +41,7 @@ function installTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'checkNewsletter') ScriptApp.deleteTrigger(t);
   });
-  ScriptApp.newTrigger('checkNewsletter').timeBased().everyMinutes(15).create();
+  ScriptApp.newTrigger('checkNewsletter').timeBased().everyHours(12).create();
 }
 
 function checkNewsletter() {
