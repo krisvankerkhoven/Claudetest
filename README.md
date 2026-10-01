@@ -14,8 +14,10 @@ elke wijziging een notificatie naar een Homey Cloud webhook-flow.
    Homey webhook-URL, met de volledige payload als JSON-tekst in de
    query-parameter `tag` (zie stap 1 hieronder — dat is hoe Homey's
    webhook-trigger data verwacht).
-4. `.github/workflows/check-prices.yml` draait dit script elke 30 minuten via
-   GitHub Actions — er is geen eigen server nodig.
+4. `.github/workflows/check-prices.yml` draait dit script elk uur via
+   GitHub Actions — er is geen eigen server nodig. (GitHub's cron-scheduler
+   houdt kortere intervallen niet strikt aan, vandaar elk uur i.p.v. elke
+   30 min.)
 
 ## Setup
 
@@ -184,3 +186,68 @@ voldoende benadering.
 ```bash
 python -m tankprijzen.nearby_main --dry-run -v
 ```
+
+## Brandstofadvies uit nieuwsbrief ("nu tanken of wachten")
+
+Derde, onafhankelijke feature: een Google Apps Script (`apps-script/brandstofadvies.gs`)
+dat een e-mail-nieuwsbrief over aankomende wettelijke max-prijswijzigingen
+opvolgt en op basis daarvan een "nu tanken"/"wacht"-advies naar Homey stuurt.
+
+### Waarom geen Python/GitHub Actions hiervoor?
+
+De twee features hierboven scrapen een website; deze info komt **enkel via
+e-mail** binnen (een nieuwsbrief van Energieprijzen.vlaanderen /
+info@elektriciteitsprijzen.com) — er is geen publieke pagina om te scrapen.
+Daarom draait dit onderdeel als Google Apps Script, gekoppeld aan je eigen
+Gmail-account (geen apart mailadres nodig, het script doorzoekt specifiek op
+afzender en raakt verder niets in je inbox).
+
+### Werking
+
+1. Elke 15 minuten doorzoekt het script Gmail op nieuwe, nog niet verwerkte
+   mails van de nieuwsbrief-afzender.
+2. De mailtekst wordt naar de Claude API gestuurd (niet vaste regex-patronen,
+   zodat het bestand blijft tegen wisselende formulering in toekomstige
+   nieuwsbrieven) met de vraag om de prijsinfo per brandstof te structureren
+   naar JSON (brandstof, richting, nieuwe prijs, huidige prijs, wijziging in
+   cent/liter, ingangsdatum — relatieve datums zoals "morgen" worden opgelost
+   t.o.v. de verzenddatum van de mail).
+3. Voor elke vermelde prijswijziging (stijging of daling) stuurt het script
+   een webhook naar een eigen Homey-flow, met hetzelfde `tag=`-queryparameter-
+   formaat als de andere twee features.
+4. De mail-thread wordt gelabeld (`Homey-verwerkt`) zodat ze niet opnieuw
+   verwerkt wordt. Bij een tijdelijke fout (bv. Claude API niet bereikbaar)
+   blijft de thread ongelabeld en wordt ze bij de volgende run opnieuw
+   geprobeerd.
+
+### Setup
+
+1. Maak een Anthropic API-key aan op console.anthropic.com (het script
+   gebruikt het Haiku-model — kosten zijn verwaarloosbaar gezien de
+   nieuwsbrief onregelmatig en kort is).
+2. Ga naar script.google.com → nieuw project → plak de inhoud van
+   `apps-script/brandstofadvies.gs`.
+3. Project Settings → Script Properties, voeg toe:
+   - `ANTHROPIC_API_KEY` — je Anthropic API-key
+   - `HOMEY_WEBHOOK_URL` — `https://webhook.homey.app/<jouw-homey-id>/brandstofadvies`
+4. Draai de functie `installTrigger` eenmalig vanuit de Apps Script-editor
+   (keuzelijst bovenaan → functie selecteren → Uitvoeren). Bij de eerste
+   keer vraagt Google om toestemming (Gmail lezen/labelen, externe
+   verzoeken) — dat hoort zo, het is je eigen script in je eigen account.
+5. Maak in Homey een nieuwe "Webhook ontvangen"-trigger met event-naam
+   `brandstofadvies`, en voeg 8 "Lees Tag als JSON en selecteer pad..."-
+   kaarten toe:
+
+   | Veld | Tag-type | Pad |
+   |---|---|---|
+   | `fuel` | Tekst-tag | `fuel` |
+   | `direction` | Tekst-tag | `direction` |
+   | `new_price` | Nummer-tag | `new_price` |
+   | `current_price` | Nummer-tag | `current_price` |
+   | `change_cents_per_liter` | Nummer-tag | `change_cents_per_liter` |
+   | `effective_date` | Tekst-tag | `effective_date` |
+   | `advice` | Tekst-tag | `advice` |
+   | `received_at` | Tekst-tag | `received_at` |
+
+6. Gebruik `{{advice}}` (bv. "Tank nu, de prijs stijgt") rechtstreeks in een
+   pushbericht, of bouw verdere logica op `direction`/`new_price`.
