@@ -33,7 +33,12 @@
  *    (zie README.md voor het volledige overzicht met tag-types).
  */
 
-const SENDER_FILTER = 'from:info@elektriciteitsprijzen.com';
+// newer_than: voorkomt dat oude, inmiddels achterhaalde prijsadviezen nog
+// verwerkt worden (het advies "tank nu, prijs stijgt morgen" is na een paar
+// dagen zinloos). MAX_THREADS_PER_RUN is een extra veiligheidsgrens tegen
+// een opeenstapeling van Homey-meldingen in één run (bv. na een backlog).
+const SENDER_FILTER = 'from:info@elektriciteitsprijzen.com newer_than:3d';
+const MAX_THREADS_PER_RUN = 5;
 const PROCESSED_LABEL = 'Homey-verwerkt';
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -46,7 +51,11 @@ function installTrigger() {
 
 function checkNewsletter() {
   const label = getOrCreateLabel_(PROCESSED_LABEL);
-  const threads = GmailApp.search(SENDER_FILTER + ' -label:"' + PROCESSED_LABEL + '"');
+  const threads = GmailApp.search(
+    SENDER_FILTER + ' -label:"' + PROCESSED_LABEL + '"',
+    0,
+    MAX_THREADS_PER_RUN
+  );
 
   threads.forEach(function (thread) {
     let allOk = true;
@@ -120,7 +129,11 @@ function extractUpdatesWithClaude_(bodyText, sentDate) {
   }
 
   const data = JSON.parse(response.getContentText());
-  const text = data.content[0].text.trim();
+  let text = data.content[0].text.trim();
+  // Claude antwoordt soms toch in een ```json ... ```-codeblok, ondanks de
+  // instructie om dat niet te doen; die backticks strippen we hier weg
+  // zodat JSON.parse niet struikelt over het eerste teken.
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
   const parsed = JSON.parse(text);
   return parsed.updates || [];
 }
