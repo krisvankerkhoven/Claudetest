@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import time
 
 from . import homey
 from .config import load_config
@@ -11,6 +12,40 @@ from .scraper import fetch_prices
 from .storage import PriceStore
 
 log = logging.getLogger(__name__)
+
+MAX_ATTEMPTS = 3
+RETRY_DELAY_SECONDS = 5
+
+
+def _fetch_prices_with_retry(url: str, station_name: str) -> dict[str, float]:
+    """Haalt prijzen op, met een paar herpogingen bij een lege of mislukte poging.
+
+    Sommige bronsites (bv. carbu.com) leveren af en toe, zonder duidelijke
+    aanwijsbare oorzaak, eenmalig geen prijzen op — een volgende geplande
+    run loste dat altijd vanzelf weer op, maar liet die ene run wel falen.
+    Een korte pauze en een nieuwe poging binnen dezelfde run vangt dat nu op.
+    """
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            prices = fetch_prices(url)
+        except Exception:
+            log.exception(
+                "Kon prijzen niet ophalen voor %s (poging %d/%d)",
+                station_name, attempt, MAX_ATTEMPTS,
+            )
+            prices = {}
+
+        if prices:
+            return prices
+
+        if attempt < MAX_ATTEMPTS:
+            log.warning(
+                "Geen prijzen gevonden voor %s (poging %d/%d), nieuwe poging over %ds",
+                station_name, attempt, MAX_ATTEMPTS, RETRY_DELAY_SECONDS,
+            )
+            time.sleep(RETRY_DELAY_SECONDS)
+
+    return {}
 
 
 def run(config_path: str, dry_run: bool) -> int:
@@ -25,21 +60,17 @@ def run(config_path: str, dry_run: bool) -> int:
 
     exit_code = 0
     for station in config.stations:
-        try:
-            prices = fetch_prices(station.url)
-        except Exception:
-            log.exception("Kon prijzen niet ophalen voor %s (%s)", station.name, station.url)
-            exit_code = 1
-            continue
+        prices = _fetch_prices_with_retry(station.url, station.name)
 
         if station.fuels:
             prices = {f: p for f, p in prices.items() if f in station.fuels}
 
         if not prices:
             log.warning(
-                "Geen brandstofprijzen gevonden op %s. Selectors in "
-                "scraper.py moeten waarschijnlijk aangepast worden.",
-                station.url,
+                "Geen brandstofprijzen gevonden op %s na %d pogingen. Als dit "
+                "aanhoudt moeten selectors in scraper.py waarschijnlijk "
+                "aangepast worden.",
+                station.url, MAX_ATTEMPTS,
             )
             exit_code = 1
             continue
