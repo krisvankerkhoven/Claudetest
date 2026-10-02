@@ -5,14 +5,14 @@
       "price": 2.356
     },
     "euro95": {
-      "changed_at": "2026-10-01T10:38:45+00:00",
-      "price": 1.892
+      "changed_at": "2026-10-02T07:51:27+00:00",
+      "price": 1.936
     }
   },
   "Shell Express Anderlecht": {
     "euro95": {
-      "changed_at": "2026-10-01T10:38:46+00:00",
-      "price": 1.902
+      "changed_at": "2026-10-02T07:51:28+00:00",
+      "price": 1.905
     }
   }
 }
