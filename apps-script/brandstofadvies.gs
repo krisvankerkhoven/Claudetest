@@ -75,7 +75,16 @@ function checkNewsletter() {
 }
 
 function processMessage_(message) {
-  const bodyText = message.getPlainBody();
+  // LET OP: message.getPlainBody() geeft bij deze nieuwsbrief enkel een korte
+  // teaser terug ("bekijk onze voorspellingen") — de echte prijsinfo staat
+  // als platte tekst in de HTML-body (geen afbeelding), dus die lezen we
+  // hier uit en zetten we om naar leesbare tekst voor Claude.
+  let bodyText = htmlToText_(message.getBody());
+  if (bodyText.length < 50) {
+    // Val terug op de plain-text-versie als de HTML-strip onverwacht leeg/te
+    // kort uitkomt (bv. een ander soort mail dan deze nieuwsbrief).
+    bodyText = message.getPlainBody();
+  }
   const sentDate = message.getDate();
 
   const updates = extractUpdatesWithClaude_(bodyText, sentDate);
@@ -83,6 +92,32 @@ function processMessage_(message) {
   updates
     .filter(function (u) { return u.direction === 'stijging' || u.direction === 'daling'; })
     .forEach(sendToHomey_);
+}
+
+function htmlToText_(html) {
+  if (!html) return '';
+  let text = html;
+  // CSS/MSO-commentaarblokken bevatten geen nuttige info en verdringen de
+  // echte inhoud als we ze laten staan.
+  text = text.replace(/<style[\s\S]*?<\/style>/gi, '');
+  text = text.replace(/<script[\s\S]*?<\/script>/gi, '');
+  text = text.replace(/<!--[\s\S]*?-->/g, '');
+  // Regeleindes behouden op plaatsen die in de opmaak een nieuwe regel waren.
+  text = text.replace(/<(br|\/p|\/div|\/tr|\/h[1-6])\s*\/?>/gi, '\n');
+  // Resterende tags weg.
+  text = text.replace(/<[^>]+>/g, ' ');
+  // Meest voorkomende HTML-entities in deze nieuwsbrief decoderen.
+  const entities = {
+    '&nbsp;': ' ', '&amp;': '&', '&euro;': '€', '&lt;': '<', '&gt;': '>',
+    '&quot;': '"', '&#39;': "'", '&rsquo;': '’',
+  };
+  text = text.replace(/&nbsp;|&amp;|&euro;|&lt;|&gt;|&quot;|&#39;|&rsquo;/g, function (m) {
+    return entities[m];
+  });
+  // Overtollige witruimte opkuisen.
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
 }
 
 function extractUpdatesWithClaude_(bodyText, sentDate) {
