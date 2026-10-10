@@ -78,9 +78,12 @@ def run(config_path: str, dry_run: bool) -> int:
         if not dry_run and webhook_url:
             payload = {
                 "station": cheapest.name,
+                "fuel": fuel,
+                "currency": "EUR",
                 "municipality": cheapest.municipality,
                 "address": cheapest.address,
                 "price": cheapest.price,
+                "previous_price": previous.get("price", cheapest.price),
                 "distance_km": round(cheapest.distance_km, 2),
                 "changed_at": now,
             }
