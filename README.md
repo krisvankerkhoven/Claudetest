@@ -253,3 +253,44 @@ afzender en raakt verder niets in je inbox).
 
 6. Gebruik `{{advice}}` (bv. "Tank nu, de prijs stijgt") rechtstreeks in een
    pushbericht, of bouw verdere logica op `direction`/`new_price`.
+
+## Goedkoopste tankstation waar je nu bent
+
+Vierde feature: zoekt op aanvraag het goedkoopste station binnen 15 km van je
+**huidige** locatie. Homey start de workflow en geeft je locatie mee.
+
+### Werking
+
+1. Een Homey-flow leest je locatie uit het apparaat "Xiaomi 14 Kris"
+   (Home Assistant app, tag `geocoded_location`, bv.
+   "Wancourstraat 1, 8420 Wenduine, Belgium").
+2. Die flow start `.github/workflows/check-here.yml` via de GitHub API
+   (`workflow_dispatch`) met de inputs `location`, `radius_km` (standaard 15)
+   en `fuel` (standaard `euro95`).
+3. `tankprijzen/here_main.py` haalt postcode en gemeente uit de tekst, zoekt
+   de carbu.com-areacode op, filtert op straal en kiest het goedkoopste station.
+   De afstand is, net als bij `nearby.py`, de afstand tot het centrum van de
+   gemeente en niet tot je exacte adres.
+4. Het resultaat gaat altijd naar de Homey-webhook `goedkoopstebenzinehier`
+   (geen "enkel bij wijziging"-logica). Payload: `station`, `fuel`, `currency`,
+   `municipality`, `address`, `price`, `previous_price`, `distance_km`,
+   `origin`, `changed_at`.
+
+### Setup
+
+1. GitHub secret **`HOMEY_HERE_WEBHOOK_URL`**:
+   `https://webhook.homey.app/<jouw-homey-id>/goedkoopstebenzinehier`.
+2. In Homey bestaat al de flow "Goedkoopste Benzine Hier" met die webhook.
+3. Maak een fine-grained GitHub token met enkel **Actions: Read and write** op
+   deze repo. Bewaar het in Homey als variabele en gebruik het in de
+   HTTP-kaart (zie hieronder). Zet het nooit in de repo.
+4. Homey-flow die de workflow start (HTTP POST):
+   - URL: `https://api.github.com/repos/krisvankerkhoven/Claudetest/actions/workflows/check-here.yml/dispatches`
+   - Headers: `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`
+   - Body: `{"ref":"<default-branch>","inputs":{"location":"<geocoded_location>","radius_km":"15"}}`
+
+### Lokaal testen
+
+```bash
+python -m tankprijzen.here_main --location "Wancourstraat 1, 8420 Wenduine" --dry-run -v
+```
