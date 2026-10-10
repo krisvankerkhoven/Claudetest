@@ -1,0 +1,48 @@
+name: Goedkoopste tankstation hier
+
+# Enkel op aanvraag: Homey start deze workflow (workflow_dispatch) met je
+# huidige locatie als input. Zie README.md, "Goedkoopste tankstation waar je nu bent".
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: "Adres, 'postcode gemeente' of gemeente (bv. 'Wancourstraat 1, 8420 Wenduine')"
+        required: true
+        type: string
+      radius_km:
+        description: "Straal in km"
+        required: false
+        default: "15"
+        type: string
+      fuel:
+        description: "Brandstof (euro95, euro98, diesel, lpg)"
+        required: false
+        default: "euro95"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Zoek goedkoopste tankstation rond de opgegeven locatie
+        env:
+          HOMEY_HERE_WEBHOOK_URL: ${{ secrets.HOMEY_HERE_WEBHOOK_URL }}
+          LOCATION: ${{ inputs.location }}
+          RADIUS_KM: ${{ inputs.radius_km }}
+          FUEL: ${{ inputs.fuel }}
+        run: |
+          python -m tankprijzen.here_main \
+            --location "$LOCATION" --radius-km "$RADIUS_KM" --fuel "$FUEL" -v
