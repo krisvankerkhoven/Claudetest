@@ -4,7 +4,7 @@ Persoonlijke wijnlog met Vivino-scores, bediend via WhatsApp. SQLite als opslag,
 
 ## Status van de Vivino-endpoints
 
-**Niet getest tegen een echt account.** De build-omgeving kon `vivino.com` niet bereiken. Alles is getest met mocks (11 tests, `pytest`), niet live. Draai eerst `python probe_vivino.py` op de machine waar de sync gaat lopen. Wat faalt, pas je aan in `wijnlog/sync.py` (`ENDPOINTS`, `login`) of `wijnlog/sources/vivino.py`. De endpointnamen komen uit geheugen en zijn onbevestigd.
+**Niet getest tegen een echt account.** De build-omgeving kon `vivino.com` niet bereiken. Alles is getest met mocks (11 tests, `pytest`), niet live. Draai eerst `python -m wijnlog.check` op de machine waar de sync gaat lopen (test met de productiecode: zoeken, login, ratings, parsing; rapport in `data/check_report.json` met enkel structuur). `--dump-sample` bewaart ook het eerste ruwe item, met waarden. `probe_vivino.py` is de losse, eenvoudige variant. Wat faalt, pas je aan in `wijnlog/sync.py` (`ENDPOINTS`, `login`) of `wijnlog/sources/vivino.py`. De endpointnamen komen uit geheugen en zijn onbevestigd.
 
 ## Architectuur
 
@@ -55,6 +55,7 @@ CLI:
 python -m wijnlog.sync [--force]
 python -m wijnlog.import_csv export.csv
 python -m wijnlog.backup
+python -m wijnlog.check
 python -m pytest
 ```
 

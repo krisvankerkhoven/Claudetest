@@ -126,3 +126,20 @@ def test_webhook(monkeypatch, tmp_path):
     assert _post(client, mk("3247", "m1")).status_code == 200   # retry: genegeerd
     assert _post(client, mk("9999", "m2")).status_code == 200   # vreemd nummer: genegeerd
     assert len(sent) == 1 and sent[0][0] == "3247"
+
+
+def test_check_report(monkeypatch, tmp_path):
+    from wijnlog import check
+    monkeypatch.setenv("DB_PATH", str(tmp_path / "w.db"))
+    class Src:
+        name = "fake"
+        def search(self, *a): return [WineHit("X", vintage=2015, score=4.1, vivino_id="1")]
+    monkeypatch.setattr(check, "configured_sources", lambda: [Src()])
+    assert check.main(["--no-login"]) == 0
+    rep = json.loads((tmp_path / "check_report.json").read_text())
+    assert rep["search"][0]["with_score"] == 1
+    class Bad:
+        name = "bad"
+        def search(self, *a): raise SourceError("403")
+    monkeypatch.setattr(check, "configured_sources", lambda: [Bad()])
+    assert check.main(["--no-login"]) == 1
