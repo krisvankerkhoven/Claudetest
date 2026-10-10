@@ -1,8 +1,8 @@
 {
-  "station_id": "939",
-  "station": "Lukoil Sint-Pieters-Leeuw",
-  "municipality": "Sint-Pieters-Leeuw",
-  "price": 1.889,
-  "distance_km": 4.72,
-  "changed_at": "2026-10-08T13:02:15+00:00"
+  "station_id": "2032",
+  "station": "Shell Express Anderlecht Boulevard Industriel",
+  "municipality": "Anderlecht",
+  "price": 1.87,
+  "distance_km": 1.71,
+  "changed_at": "2026-10-10T08:07:44+00:00"
 }
