@@ -1,0 +1,15 @@
+[Unit]
+Description=Wijnlog WhatsApp webhook
+After=network-online.target
+
+[Service]
+User=wijnlog
+WorkingDirectory=/opt/wijnlog
+ExecStart=/opt/wijnlog/.venv/bin/uvicorn wijnlog.app:app --host 127.0.0.1 --port 8000 --workers 1
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/opt/wijnlog/data
+
+[Install]
+WantedBy=multi-user.target

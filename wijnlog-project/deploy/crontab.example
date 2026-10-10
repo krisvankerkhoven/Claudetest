@@ -1,0 +1,4 @@
+# 3x per dag sync (de interval-guard in de code blokkeert sowieso alles binnen SYNC_MIN_INTERVAL_HOURS)
+17 8,14,20 * * * cd /opt/wijnlog && .venv/bin/python -m wijnlog.sync >> data/sync.log 2>&1
+# dagelijkse back-up (+ upload als BACKUP_UPLOAD_CMD gezet is)
+45 3 * * *       cd /opt/wijnlog && .venv/bin/python -m wijnlog.backup >> data/backup.log 2>&1

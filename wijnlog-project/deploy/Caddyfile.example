@@ -1,0 +1,5 @@
+# Alternatief voor Cloudflare Tunnel: eigen domein dat naar de VPS wijst
+wijn.jouwdomein.be {
+    reverse_proxy /webhook 127.0.0.1:8000
+    reverse_proxy /health 127.0.0.1:8000
+}
