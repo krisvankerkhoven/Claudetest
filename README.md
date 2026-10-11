@@ -294,3 +294,16 @@ Vierde feature: zoekt op aanvraag het goedkoopste station binnen 15 km van je
 ```bash
 python -m tankprijzen.here_main --location "Wancourstraat 1, 8420 Wenduine" --dry-run -v
 ```
+
+## Kledingadvies (WhatsApp, 08:35)
+
+`kleding/` maakt een kledingadvies voor je huidige locatie. Homey start
+`.github/workflows/kleding.yml` (workflow_dispatch) met je locatie
+(`xiaomi_17_kris_geocoded_location`) en `gus_fiets=true` als de agenda
+"Gus brengen" bevat (Kris of Kristien). Het script zet het adres om naar
+coördinaten (Nominatim), haalt het weer op (Open-Meteo, geen sleutel) en past
+vaste regels toe. Bij `gus_fiets=true` komt er extra advies voor een driejarige
+achterop de fiets. Het resultaat gaat naar de Homey webhook `kleding`.
+
+Secret: `HOMEY_KLEDING_WEBHOOK_URL` (volledige webhook-URL van de Homey-flow).
+Lokaal testen: `python -m kleding.main --location "Wenduine" --gus-fiets true --dry-run`
