@@ -295,7 +295,7 @@ Vierde feature: zoekt op aanvraag het goedkoopste station binnen 15 km van je
 python -m tankprijzen.here_main --location "Wancourstraat 1, 8420 Wenduine" --dry-run -v
 ```
 
-## Kledingadvies (WhatsApp, 08:35)
+## Kledingadvies (WhatsApp, 07:55)
 
 `kleding/` maakt een kledingadvies voor je huidige locatie. Homey start
 `.github/workflows/kleding.yml` (workflow_dispatch) met je locatie

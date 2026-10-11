@@ -1,6 +1,6 @@
 name: Kledingadvies
 
-# Enkel op aanvraag: Homey start deze workflow om 08:35 met je huidige locatie
+# Enkel op aanvraag: Homey start deze workflow om 07:55 met je huidige locatie
 # en of Gus vandaag met de fiets naar school gaat. Zie README.md, "Kledingadvies".
 on:
   workflow_dispatch:

@@ -24,10 +24,8 @@ DAG_UREN = (8, 18)
 
 
 def bouw_bericht(plaats_naam: str, dag, school, gus_fiets: bool) -> str:
-    regels = [f"Kledingadvies voor {plaats_naam}", ""]
-    regels += dagadvies(dag)
+    regels = [f"{plaats_naam}: " + dagadvies(dag)[0]] + dagadvies(dag)[1:]
     if gus_fiets:
-        regels += ["", "Vandaag brengen we Gus met de fiets naar school."]
         regels += fietsadvies_gus(school)
     return "\n".join(regels)
 
