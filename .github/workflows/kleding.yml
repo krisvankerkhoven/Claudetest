@@ -1,0 +1,40 @@
+name: Kledingadvies
+
+# Enkel op aanvraag: Homey start deze workflow om 08:35 met je huidige locatie
+# en of Gus vandaag met de fiets naar school gaat. Zie README.md, "Kledingadvies".
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: "Adres van je huidige locatie (uit de telefoon)"
+        required: true
+        type: string
+      gus_fiets:
+        description: "true als Gus vandaag met de fiets naar school gaat"
+        required: false
+        default: "false"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  advies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Maak kledingadvies
+        env:
+          HOMEY_KLEDING_WEBHOOK_URL: ${{ secrets.HOMEY_KLEDING_WEBHOOK_URL }}
+          LOCATION: ${{ inputs.location }}
+          GUS_FIETS: ${{ inputs.gus_fiets }}
+        run: python -m kleding.main --location "$LOCATION" --gus-fiets "$GUS_FIETS" -v
