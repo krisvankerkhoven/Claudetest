@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from dataclasses import dataclass
 
 import requests
@@ -32,8 +33,37 @@ class Venster:
     windstoten_max: float
 
 
+COORDINATEN = re.compile(r"^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)\s*$")
+
+
+def _plaats_uit(item: dict, fallback: str) -> Plaats:
+    adr = item.get("address", {})
+    naam = (adr.get("village") or adr.get("town") or adr.get("city")
+            or adr.get("municipality") or item.get("name") or fallback)
+    return Plaats(naam, adr.get("country_code", "").upper(),
+                  float(item["lat"]), float(item["lon"]))
+
+
+def reverse_geocode(lat: float, lon: float) -> Plaats:
+    response = requests.get(
+        "https://nominatim.openstreetmap.org/reverse",
+        params={"lat": lat, "lon": lon, "format": "jsonv2", "zoom": 14,
+                "accept-language": "nl"},
+        headers={"User-Agent": USER_AGENT},
+        timeout=15,
+    )
+    response.raise_for_status()
+    item = response.json()
+    if "lat" not in item:
+        return Plaats(f"{lat:.3f},{lon:.3f}", "", lat, lon)
+    return _plaats_uit(item, f"{lat:.3f},{lon:.3f}")
+
+
 def geocode(adres: str) -> Plaats:
-    """Zet een adres om naar coördinaten. Probeert telkens een korter adres."""
+    """Zet een adres of 'lat,lon' om naar een plaats. Probeert telkens een korter adres."""
+    coord = COORDINATEN.match(adres)
+    if coord:
+        return reverse_geocode(float(coord.group(1)), float(coord.group(2)))
     delen = [d.strip() for d in adres.split(",") if d.strip()]
     if not delen:
         raise ValueError("Lege locatie")
@@ -49,12 +79,7 @@ def geocode(adres: str) -> Plaats:
         response.raise_for_status()
         items = response.json()
         if items:
-            item = items[0]
-            adr = item.get("address", {})
-            naam = (adr.get("village") or adr.get("town") or adr.get("city")
-                    or adr.get("municipality") or item.get("name") or query)
-            return Plaats(naam, adr.get("country_code", "").upper(),
-                          float(item["lat"]), float(item["lon"]))
+            return _plaats_uit(items[0], query)
     raise ValueError(f"Locatie niet gevonden: {adres}")
 
 
