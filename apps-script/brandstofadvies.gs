@@ -5,7 +5,8 @@
  * nieuwsbrief (info@elektriciteitsprijzen.com), laat Claude de
  * prijsinfo uit de mailtekst structureren (robuust tegen wisselende
  * formulering, in tegenstelling tot vaste regex-patronen), en stuurt
- * per vermelde brandstofwijziging een webhook naar een eigen Homey-flow.
+ * voor de vermelde wijziging van HOMEY_FUEL een webhook naar een eigen
+ * Homey-flow.
  *
  * Dit script draait in Google Apps Script, gebonden aan je bestaand
  * Gmail-account (geen apart mailadres nodig) — niet in GitHub Actions,
@@ -17,7 +18,9 @@
  * 2. Vervang de inhoud van Code.gs door dit bestand.
  * 3. Project Settings (tandwiel) -> Script Properties -> voeg toe:
  *      ANTHROPIC_API_KEY   = je eigen Anthropic API-key (console.anthropic.com)
- *      HOMEY_WEBHOOK_URL   = https://webhook.homey.app/<jouw-homey-id>/brandstofadvies
+ *      HOMEY_WEBHOOK_URL   = https://webhook.homey.app/<jouw-homey-id>/predictione10
+ *                            (de laatste padsectie moet exact overeenkomen met
+ *                            de event-naam van de Homey-flow "predictione10")
  * 4. Open de functie "installTrigger" in de editor, selecteer ze in het
  *    dropdown-menu bovenaan, en klik "Uitvoeren". De eerste keer vraagt
  *    Google om toestemming (Gmail lezen/labelen, externe verzoeken) —
@@ -27,7 +30,7 @@
  *    een nieuwe, nog niet verwerkte mail gevonden wordt — bij niets
  *    nieuws stopt het script meteen, zonder API-kosten.
  * 5. In Homey: maak een nieuwe "Webhook ontvangen"-trigger met
- *    event-naam "brandstofadvies", en 8 "Lees Tag als JSON en selecteer
+ *    event-naam "predictione10", en 8 "Lees Tag als JSON en selecteer
  *    pad..."-kaarten voor: fuel, direction, new_price, current_price,
  *    change_cents_per_liter, effective_date, advice, received_at
  *    (zie README.md voor het volledige overzicht met tag-types).
@@ -41,6 +44,9 @@ const SENDER_FILTER = 'from:info@elektriciteitsprijzen.com newer_than:3d';
 const MAX_THREADS_PER_RUN = 5;
 const PROCESSED_LABEL = 'Homey-verwerkt';
 const CLAUDE_MODEL = 'claude-haiku-4-5-20251001';
+// Het Homey-apparaat "Brandstofadvies E10" toont maar één brandstof. Updates
+// voor andere brandstoffen (bv. diesel) zouden het apparaat overschrijven.
+const HOMEY_FUEL = 'euro95';
 
 function installTrigger() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
@@ -68,8 +74,8 @@ function checkNewsletter() {
       }
     });
     // Enkel labelen (= niet opnieuw verwerken) als alles lukte. Bij een
-    // tijdelijke fout (bv. Claude API down) blijft de thread onverwerkt
-    // en wordt ze bij de volgende run automatisch opnieuw geprobeerd.
+    // tijdelijke fout (bv. Claude API of Homey down) blijft de thread
+    // onverwerkt en wordt ze bij de volgende run automatisch opnieuw geprobeerd.
     if (allOk) thread.addLabel(label);
   });
 }
@@ -90,7 +96,10 @@ function processMessage_(message) {
   const updates = extractUpdatesWithClaude_(bodyText, sentDate);
 
   updates
-    .filter(function (u) { return u.direction === 'stijging' || u.direction === 'daling'; })
+    .filter(function (u) {
+      return u.fuel === HOMEY_FUEL &&
+        (u.direction === 'stijging' || u.direction === 'daling');
+    })
     .forEach(sendToHomey_);
 }
 
@@ -175,6 +184,9 @@ function extractUpdatesWithClaude_(bodyText, sentDate) {
 
 function sendToHomey_(update) {
   const webhookUrl = PropertiesService.getScriptProperties().getProperty('HOMEY_WEBHOOK_URL');
+  if (!webhookUrl) {
+    throw new Error('Script Property HOMEY_WEBHOOK_URL ontbreekt');
+  }
 
   const advies = update.direction === 'stijging'
     ? 'Tank nu, de prijs stijgt'
@@ -195,7 +207,17 @@ function sendToHomey_(update) {
   // in een query-parameter die letterlijk "tag" heet (zie README.md).
   const url = webhookUrl + '?tag=' + encodeURIComponent(JSON.stringify(payload));
 
-  UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  const response = UrlFetchApp.fetch(url, { method: 'post', muteHttpExceptions: true });
+  const code = response.getResponseCode();
+  // Zonder deze controle bleef een 404 (bv. verkeerde event-naam in de URL)
+  // onzichtbaar: de mail werd toch als verwerkt gelabeld en nooit opnieuw
+  // geprobeerd. Nu faalt het bericht en wordt het bij de volgende run herhaald.
+  if (code < 200 || code >= 300) {
+    throw new Error(
+      'Homey webhook gaf HTTP ' + code + ': ' + response.getContentText().slice(0, 200)
+    );
+  }
+  console.log('Homey webhook verstuurd (HTTP ' + code + '): ' + update.fuel + ' ' + update.direction);
 }
 
 function getOrCreateLabel_(name) {
