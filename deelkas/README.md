@@ -28,3 +28,9 @@ Open `index.html` in een browser. Zonder configuratie bewaart de app alles in di
 - Bedragen in cent, alleen euro.
 - Een lid met uitgaven kan niet verwijderd worden.
 - De pagina ververst elke 6 seconden en na elke wijziging.
+
+## GitHub Pages
+
+De workflow `.github/workflows/deelkas-pages.yml` publiceert de app bij elke push naar de standaardbranch die iets in `deelkas/` wijzigt. Je kan ze ook handmatig starten (Actions, "Deelkas naar GitHub Pages", Run workflow).
+
+Eenmalig: Settings, Pages, Source = **GitHub Actions**. De site staat dan op `https://<gebruiker>.github.io/<repo>/`.
