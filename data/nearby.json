@@ -1,8 +1,8 @@
 {
-  "station_id": "2032",
-  "station": "Shell Express Anderlecht Boulevard Industriel",
+  "station_id": "2435",
+  "station": "Texaco Anderlecht",
   "municipality": "Anderlecht",
-  "price": 1.72,
-  "distance_km": 1.71,
-  "changed_at": "2026-11-04T13:57:40+00:00"
+  "price": 0.0,
+  "distance_km": 1.86,
+  "changed_at": "2026-11-05T14:17:18+00:00"
 }
