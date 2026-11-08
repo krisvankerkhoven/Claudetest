@@ -20,6 +20,7 @@ import yaml
 from . import homey
 from .duitsland import fetch_germany, geocode as geocode_de, looks_german
 from .frankrijk import fetch_france, geocode as geocode_fr, looks_french
+from .spanje import fetch_spain, geocode as geocode_es, looks_spanish
 from .nearby import USER_AGENT, NearbyStation, fetch_nearby, find_cheapest_n
 
 log = logging.getLogger(__name__)
@@ -38,13 +39,25 @@ def format_overview(top: list[NearbyStation]) -> str:
     return "\n".join(lines)
 
 
+_LUXEMBOURG_WORDS = ("luxembourg", "luxemburg", "lussemburgo")
+_BELGIUM_WORDS = ("belgi", "belgique", "belgium", "belgien")
+
+
+def looks_luxembourgish(text: str) -> bool:
+    """Herkent een adres in het groothertogdom (niet de Belgische provincie Luxemburg)."""
+    lowered = text.lower()
+    if any(word in lowered for word in _BELGIUM_WORDS):
+        return False
+    return any(word in lowered for word in _LUXEMBOURG_WORDS)
+
+
 def parse_location(text: str) -> tuple[str, str | None]:
     """Haalt (gemeente, postcode) uit vrije tekst.
 
     Ondersteunt "Straat 1, 8420 Wenduine, Belgium", "8420 Wenduine",
     "Wenduine 8420" en een kale gemeentenaam ("Wenduine").
     """
-    parts = [p.strip() for p in text.split(",") if p.strip()]
+    parts = [re.sub(r"\bL-(?=\d{4})", "", p.strip()) for p in text.split(",") if p.strip()]
     for part in parts:
         match = re.match(r"^(\d{4})\s+(.+)$", part)
         if match:
@@ -57,7 +70,9 @@ def parse_location(text: str) -> tuple[str, str | None]:
     return parts[0], None
 
 
-def resolve_area(location_name: str, postcode: str | None) -> tuple[str, str, str]:
+def resolve_area(
+    location_name: str, postcode: str | None, country: str = "BE"
+) -> tuple[str, str, str]:
     """Zoekt carbu.com's areacode op. Geeft (areacode, gemeente, postcode)."""
     response = requests.get(
         "https://carbu.com//commonFunctions/getlocation/controller.getlocation_JSON.php",
@@ -67,7 +82,7 @@ def resolve_area(location_name: str, postcode: str | None) -> tuple[str, str, st
             "minLevel": 5,
             "maxLevel": 6,
             "SHRT": 1,
-            "country": "BE",
+            "country": country,
             "GPSCoordRequired": "true",
             "L": "nl",
         },
@@ -99,6 +114,16 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         municipality, postcode = label, ""
         log.info("Zoekcentrum (Duitsland): %s, straal %s km", label, radius_km)
         stations = fetch_germany(lat, lon, radius_km)
+    elif looks_spanish(location):
+        lat, lon, label = geocode_es(location)
+        municipality, postcode = label, ""
+        log.info("Zoekcentrum (Spanje): %s, straal %s km", label, radius_km)
+        stations = fetch_spain(lat, lon, radius_km)
+    elif looks_luxembourgish(location):
+        name, postcode = parse_location(location)
+        area_code, municipality, postcode = resolve_area(name, postcode, "LU")
+        log.info("Zoekcentrum (Luxemburg): %s (%s), straal %s km", municipality, postcode, radius_km)
+        stations = fetch_nearby(fuel, municipality, postcode, area_code, "luxembourg")
     elif looks_french(location):
         lat, lon, label = geocode_fr(location)
         municipality, postcode = label, ""

@@ -71,12 +71,12 @@ def resolve_area(location_name: str, postcode: str) -> str:
 
 
 def fetch_nearby(
-    fuel: str, location_name: str, postcode: str, area_code: str
+    fuel: str, location_name: str, postcode: str, area_code: str, country: str = "belgie"
 ) -> list[NearbyStation]:
     """Haalt alle tankstations rond de opgegeven gemeente op, met prijs voor `fuel`."""
     carbu_fuel = CARBU_FUEL_CODES.get(fuel, fuel)
     url = (
-        f"https://carbu.com/belgie//liste-stations-service/"
+        f"https://carbu.com/{country}//liste-stations-service/"
         f"{carbu_fuel}/{location_name}/{postcode}/{area_code}"
     )
     response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
