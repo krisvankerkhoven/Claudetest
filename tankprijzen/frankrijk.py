@@ -104,6 +104,8 @@ def fetch_france(
                 price=float(price),
                 distance_km=_haversine_km(lat, lon, geom["lat"], geom["lon"]),
                 url="",
+                lat=geom["lat"],
+                lon=geom["lon"],
             )
         )
     return stations

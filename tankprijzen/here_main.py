@@ -21,7 +21,7 @@ from . import homey
 from .duitsland import fetch_germany, geocode as geocode_de, looks_german
 from .frankrijk import fetch_france, geocode as geocode_fr, looks_french
 from .spanje import fetch_spain, geocode as geocode_es, looks_spanish
-from .nearby import USER_AGENT, NearbyStation, fetch_nearby, find_cheapest_n
+from .nearby import USER_AGENT, NearbyStation, fetch_nearby, find_cheapest_n, waze_url
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +36,7 @@ def format_overview(top: list[NearbyStation]) -> str:
         price = f"{s.price:.3f}".replace(".", ",")
         distance = f"{s.distance_km:.1f}".replace(".", ",")
         lines.append(f"{rank}. {s.name} ({s.address}): {price} euro, {distance} km")
+        lines.append(f"Waze: {waze_url(s)}")
     return "\n".join(lines)
 
 
@@ -157,6 +158,7 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         "previous_price": cheapest.price,
         "distance_km": round(cheapest.distance_km, 1),
         "overview": format_overview(top),
+        "waze_url": waze_url(cheapest),
         "origin": f"{municipality} {postcode}".strip(),
         "changed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }

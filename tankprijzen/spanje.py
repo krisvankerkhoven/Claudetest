@@ -116,6 +116,8 @@ def fetch_spain(lat: float, lon: float, radius_km: float) -> list[NearbyStation]
                 price=price,
                 distance_km=distance,
                 url="",
+                lat=s_lat,
+                lon=s_lon,
             )
         )
     return stations
