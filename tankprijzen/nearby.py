@@ -122,7 +122,9 @@ def find_cheapest(
     candidates = [
         s
         for s in stations
-        if s.distance_km <= radius_km and s.municipality.strip().lower() not in excluded
+        if s.price > 0  # carbu.com geeft 0 terug voor stations zonder bekende prijs
+        and s.distance_km <= radius_km
+        and s.municipality.strip().lower() not in excluded
     ]
     if not candidates:
         return None
