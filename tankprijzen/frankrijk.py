@@ -23,14 +23,6 @@ DATASET_URL = (
 )
 ADDRESS_URL = "https://api-adresse.data.gouv.fr/search/"
 
-# Onze interne brandstofnamen -> veldprefix in de Franse dataset.
-FRANCE_FUEL_FIELDS = {
-    "euro95": "e10",
-    "euro98": "sp98",
-    "diesel": "gazole",
-    "lpg": "gplc",
-}
-
 _FRANCE_WORDS = ("france", "frankrijk", "frankreich", "francia")
 
 
@@ -76,10 +68,8 @@ def fetch_france(
     fuel: str, lat: float, lon: float, radius_km: float
 ) -> list[NearbyStation]:
     """Haalt de stations binnen `radius_km` met een prijs voor `fuel`, goedkoopste eerst."""
-    field = FRANCE_FUEL_FIELDS.get(fuel)
-    if field is None:
-        raise ValueError(f"Brandstof '{fuel}' wordt voor Frankrijk niet ondersteund")
-    price_field = f"{field}_prix"
+    # Altijd E10 (in Frankrijk de standaard benzine); `fuel` wordt genegeerd.
+    price_field = "e10_prix"
 
     response = requests.get(
         DATASET_URL,
