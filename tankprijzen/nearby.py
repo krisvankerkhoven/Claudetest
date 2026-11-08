@@ -114,18 +114,29 @@ def fetch_nearby(
     return list(stations.values())
 
 
-def find_cheapest(
-    stations: list[NearbyStation], radius_km: float, excluded_municipalities: list[str]
-) -> NearbyStation | None:
-    """Geeft het goedkoopste station terug binnen `radius_km`, uitgesloten gemeenten weggelaten."""
+def find_cheapest_n(
+    stations: list[NearbyStation], radius_km: float, excluded_municipalities: list[str], n: int
+) -> list[NearbyStation]:
+    """Geeft de `n` goedkoopste stations binnen `radius_km`, goedkoopste eerst.
+
+    Stations met prijs 0 (carbu.com: geen bekende prijs) en uitgesloten
+    gemeenten worden weggelaten. Bij gelijke prijs gaat het dichtstbijzijnde voor.
+    """
     excluded = {m.strip().lower() for m in excluded_municipalities}
     candidates = [
         s
         for s in stations
-        if s.price > 0  # carbu.com geeft 0 terug voor stations zonder bekende prijs
+        if s.price > 0
         and s.distance_km <= radius_km
         and s.municipality.strip().lower() not in excluded
     ]
-    if not candidates:
-        return None
-    return min(candidates, key=lambda s: s.price)
+    candidates.sort(key=lambda s: (s.price, s.distance_km))
+    return candidates[:n]
+
+
+def find_cheapest(
+    stations: list[NearbyStation], radius_km: float, excluded_municipalities: list[str]
+) -> NearbyStation | None:
+    """Geeft het goedkoopste station terug binnen `radius_km`, uitgesloten gemeenten weggelaten."""
+    top = find_cheapest_n(stations, radius_km, excluded_municipalities, 1)
+    return top[0] if top else None

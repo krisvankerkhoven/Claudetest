@@ -20,11 +20,22 @@ import yaml
 from . import homey
 from .duitsland import fetch_germany, geocode as geocode_de, looks_german
 from .frankrijk import fetch_france, geocode as geocode_fr, looks_french
-from .nearby import USER_AGENT, fetch_nearby, find_cheapest
+from .nearby import USER_AGENT, NearbyStation, fetch_nearby, find_cheapest_n
 
 log = logging.getLogger(__name__)
 
 DEFAULT_RADIUS_KM = 15
+TOP_N = 3
+
+
+def format_overview(top: list[NearbyStation]) -> str:
+    """Maakt het overzicht van de goedkoopste stations, één regel per station."""
+    lines = []
+    for rank, s in enumerate(top, start=1):
+        price = f"{s.price:.3f}".replace(".", ",")
+        distance = f"{s.distance_km:.1f}".replace(".", ",")
+        lines.append(f"{rank}. {s.name} ({s.address}): {price} euro, {distance} km")
+    return "\n".join(lines)
 
 
 def parse_location(text: str) -> tuple[str, str | None]:
@@ -100,10 +111,11 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         stations = fetch_nearby(fuel, municipality, postcode, area_code)
     log.info("%d stations gevonden rond %s", len(stations), municipality)
 
-    cheapest = find_cheapest(stations, radius_km, [])
-    if cheapest is None:
+    top = find_cheapest_n(stations, radius_km, [], TOP_N)
+    if not top:
         log.warning("Geen station gevonden binnen %s km van %s", radius_km, municipality)
         return 1
+    cheapest = top[0]
 
     log.info(
         "Goedkoopste: %s (%s) - EUR %.3f op %.1f km",
@@ -119,6 +131,7 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         "price": cheapest.price,
         "previous_price": cheapest.price,
         "distance_km": round(cheapest.distance_km, 1),
+        "overview": format_overview(top),
         "origin": f"{municipality} {postcode}".strip(),
         "changed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
