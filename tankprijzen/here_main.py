@@ -18,6 +18,7 @@ import requests
 import yaml
 
 from . import homey
+from .duitsland import fetch_germany, geocode as geocode_de, looks_german
 from .frankrijk import fetch_france, geocode as geocode_fr, looks_french
 from .nearby import USER_AGENT, fetch_nearby, find_cheapest
 
@@ -82,7 +83,12 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         except FileNotFoundError:
             pass
 
-    if looks_french(location):
+    if looks_german(location):
+        lat, lon, label = geocode_de(location)
+        municipality, postcode = label, ""
+        log.info("Zoekcentrum (Duitsland): %s, straal %s km", label, radius_km)
+        stations = fetch_germany(lat, lon, radius_km)
+    elif looks_french(location):
         lat, lon, label = geocode_fr(location)
         municipality, postcode = label, ""
         log.info("Zoekcentrum (Frankrijk): %s, straal %s km", label, radius_km)

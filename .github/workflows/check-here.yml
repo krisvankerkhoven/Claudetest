@@ -40,6 +40,7 @@ jobs:
       - name: Zoek goedkoopste tankstation rond de opgegeven locatie
         env:
           HOMEY_HERE_WEBHOOK_URL: ${{ secrets.HOMEY_HERE_WEBHOOK_URL }}
+          TANKERKOENIG_API_KEY: ${{ secrets.TANKERKOENIG_API_KEY }}
           LOCATION: ${{ inputs.location }}
           RADIUS_KM: ${{ inputs.radius_km }}
           FUEL: ${{ inputs.fuel }}
