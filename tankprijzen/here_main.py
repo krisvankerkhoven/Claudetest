@@ -18,6 +18,7 @@ import requests
 import yaml
 
 from . import homey
+from .frankrijk import fetch_france, geocode as geocode_fr, looks_french
 from .nearby import USER_AGENT, fetch_nearby, find_cheapest
 
 log = logging.getLogger(__name__)
@@ -81,11 +82,16 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         except FileNotFoundError:
             pass
 
-    name, postcode = parse_location(location)
-    area_code, municipality, postcode = resolve_area(name, postcode)
-    log.info("Zoekcentrum: %s (%s), straal %s km", municipality, postcode, radius_km)
-
-    stations = fetch_nearby(fuel, municipality, postcode, area_code)
+    if looks_french(location):
+        lat, lon, label = geocode_fr(location)
+        municipality, postcode = label, ""
+        log.info("Zoekcentrum (Frankrijk): %s, straal %s km", label, radius_km)
+        stations = fetch_france(fuel, lat, lon, radius_km)
+    else:
+        name, postcode = parse_location(location)
+        area_code, municipality, postcode = resolve_area(name, postcode)
+        log.info("Zoekcentrum: %s (%s), straal %s km", municipality, postcode, radius_km)
+        stations = fetch_nearby(fuel, municipality, postcode, area_code)
     log.info("%d stations gevonden rond %s", len(stations), municipality)
 
     cheapest = find_cheapest(stations, radius_km, [])
@@ -107,7 +113,7 @@ def run(location: str, radius_km: float, fuel: str, config_path: str, dry_run: b
         "price": cheapest.price,
         "previous_price": cheapest.price,
         "distance_km": round(cheapest.distance_km, 1),
-        "origin": f"{municipality} {postcode}",
+        "origin": f"{municipality} {postcode}".strip(),
         "changed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
