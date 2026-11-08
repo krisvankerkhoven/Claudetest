@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from urllib.parse import quote
 
 import requests
 from bs4 import BeautifulSoup
@@ -44,6 +45,27 @@ class NearbyStation:
     price: float
     distance_km: float
     url: str
+    lat: float | None = None
+    lon: float | None = None
+
+
+def _to_float(value: str | None) -> float | None:
+    try:
+        return float(value) if value else None
+    except ValueError:
+        return None
+
+
+def waze_url(station: NearbyStation) -> str:
+    """Link die Waze opent met navigatie naar het station.
+
+    Met coördinaten navigeert Waze naar het exacte punt. Zonder (carbu.com geeft
+    ze niet altijd mee) zoekt Waze op naam en adres.
+    """
+    if station.lat is not None and station.lon is not None:
+        return f"https://waze.com/ul?ll={station.lat:.6f},{station.lon:.6f}&navigate=yes"
+    query = quote(f"{station.name}, {station.address}")
+    return f"https://waze.com/ul?q={query}&navigate=yes"
 
 
 def resolve_area(location_name: str, postcode: str) -> str:
@@ -71,12 +93,12 @@ def resolve_area(location_name: str, postcode: str) -> str:
 
 
 def fetch_nearby(
-    fuel: str, location_name: str, postcode: str, area_code: str
+    fuel: str, location_name: str, postcode: str, area_code: str, country: str = "belgie"
 ) -> list[NearbyStation]:
     """Haalt alle tankstations rond de opgegeven gemeente op, met prijs voor `fuel`."""
     carbu_fuel = CARBU_FUEL_CODES.get(fuel, fuel)
     url = (
-        f"https://carbu.com/belgie//liste-stations-service/"
+        f"https://carbu.com/{country}//liste-stations-service/"
         f"{carbu_fuel}/{location_name}/{postcode}/{area_code}"
     )
     response = requests.get(url, headers={"User-Agent": USER_AGENT}, timeout=15)
@@ -101,6 +123,9 @@ def fetch_nearby(
         except (KeyError, ValueError):
             continue
 
+        lat = _to_float(div.get("data-lat") or div.get("data-latitude"))
+        lon = _to_float(div.get("data-lng") or div.get("data-lon") or div.get("data-longitude"))
+
         stations[station_id] = NearbyStation(
             id=station_id,
             name=div.get("data-name", "").strip(),
@@ -109,6 +134,8 @@ def fetch_nearby(
             price=price,
             distance_km=distance_km,
             url=div.get("data-link", ""),
+            lat=lat,
+            lon=lon,
         )
 
     return list(stations.values())

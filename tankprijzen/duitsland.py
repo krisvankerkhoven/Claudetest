@@ -97,6 +97,8 @@ def fetch_germany(
                 price=float(price),
                 distance_km=float(row.get("dist", 0.0)),
                 url="",
+                lat=row.get("lat"),
+                lon=row.get("lng"),
             )
         )
     return stations
